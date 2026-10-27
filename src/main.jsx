@@ -63,13 +63,16 @@ function App() {
     if (!(route.replace(/\/+$/, '') === '/dashboard' || route.replace(/\/+$/, '') === '/panel')) return;
     let cancelled = false;
     setDashboardLoading(true);
-    fetch(`${AUTH_API}/api/me`, { credentials: 'include' })
-      .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Faça login com o Discord para continuar.'); return d; })
-      .then(async me => {
-        const r = await fetch(`${AUTH_API}/api/guilds`, { credentials: 'include' });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || 'Não foi possível carregar os servidores.');
-        if (!cancelled) { setProfile(me); setGuilds(d.guilds || []); setDashboardError(''); }
+    // As duas consultas usam a mesma sessão; executá-las em paralelo evita uma ida extra ao backend.
+    Promise.all([
+      fetch(`${AUTH_API}/api/me`, { credentials: 'include' }),
+      fetch(`${AUTH_API}/api/guilds`, { credentials: 'include' }),
+    ])
+      .then(async ([meResponse, guildResponse]) => {
+        const [me, guildData] = await Promise.all([meResponse.json(), guildResponse.json()]);
+        if (!meResponse.ok) throw new Error(me.error || 'Faça login com o Discord para continuar.');
+        if (!guildResponse.ok) throw new Error(guildData.error || 'Não foi possível carregar os servidores.');
+        if (!cancelled) { setProfile(me); setGuilds(guildData.guilds || []); setDashboardError(''); }
       })
       .catch(err => { if (!cancelled) { setProfile(null); setGuilds([]); if (!/Faça login com o Discord/i.test(err.message)) setDashboardError(err.message || 'Erro ao carregar o painel.'); } })
       .finally(() => { if (!cancelled) setDashboardLoading(false); });
