@@ -10,7 +10,6 @@ import './style.css';
 const botClientId = '1443238280060473507';
 const botInvite = `https://discord.com/oauth2/authorize?client_id=${botClientId}&permissions=8&scope=bot%20applications.commands`;
 const AUTH_API = 'https://vyntex-auth-backend.onrender.com';
-const sessionKey = 'vyntex_session';
 function discordAvatar(user) {
   if (!user?.id || !user?.avatar) return null;
   const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
@@ -33,7 +32,7 @@ function App() {
   const [guilds, setGuilds] = useState([]);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState('');
-  const [sessionToken, setSessionToken] = useState(() => localStorage.getItem(sessionKey) || '');
+  const [sessionToken, setSessionToken] = useState(0);
 
   function go(path) {
     window.history.pushState({}, '', path);
@@ -44,15 +43,7 @@ function App() {
   window.onpopstate = () => setRoute(window.location.pathname);
 
   useEffect(() => {
-    // O backend devolve a sessão no fragmento para não expor o token em logs/requests.
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const returnedToken = hash.get('token');
-    const authError = hash.get('auth_error') || new URLSearchParams(window.location.search).get('auth_error');
-    if (returnedToken) {
-      localStorage.setItem(sessionKey, returnedToken);
-      setSessionToken(returnedToken);
-      window.history.replaceState({}, '', '/dashboard');
-    }
+    const authError = new URLSearchParams(window.location.search).get('auth_error');
     if (authError) {
       setDashboardError('O login foi cancelado ou não foi concluído. Tente conectar novamente.');
       window.history.replaceState({}, '', '/dashboard');
@@ -61,33 +52,30 @@ function App() {
 
   useEffect(() => {
     if (!(route.replace(/\/+$/, '') === '/dashboard' || route.replace(/\/+$/, '') === '/panel')) return;
-    const token = sessionToken || localStorage.getItem(sessionKey);
-    if (!token) { setProfile(null); setGuilds([]); return; }
     let cancelled = false;
-    setDashboardLoading(true); setDashboardError('');
-    const headers = { Authorization: `Bearer ${token}` };
-    Promise.all([
-      fetch(`${AUTH_API}/api/me`, { headers }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Não foi possível carregar seu perfil.'); return d; }),
-      fetch(`${AUTH_API}/api/guilds`, { headers }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Não foi possível carregar os servidores.'); return d.guilds || []; })
-    ]).then(([me, list]) => { if (!cancelled) { setProfile(me); setGuilds(list); } })
-      .catch(err => { if (!cancelled) { setDashboardError(err.message || 'Erro ao carregar o painel.'); setProfile(null); setGuilds([]); if (/sessão|login|entre novamente/i.test(err.message)) { localStorage.removeItem(sessionKey); setSessionToken(''); } } })
+    setDashboardLoading(true);
+    fetch(`${AUTH_API}/api/me`, { credentials: 'include' })
+      .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Faça login com o Discord para continuar.'); return d; })
+      .then(async me => {
+        const r = await fetch(`${AUTH_API}/api/guilds`, { credentials: 'include' });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Não foi possível carregar os servidores.');
+        if (!cancelled) { setProfile(me); setGuilds(d.guilds || []); setDashboardError(''); }
+      })
+      .catch(err => { if (!cancelled) { setProfile(null); setGuilds([]); if (!/Faça login com o Discord/i.test(err.message)) setDashboardError(err.message || 'Erro ao carregar o painel.'); } })
       .finally(() => { if (!cancelled) setDashboardLoading(false); });
     return () => { cancelled = true; };
   }, [route, sessionToken]);
 
   function loginDiscord() { window.location.href = `${AUTH_API}/auth/discord`; }
   function openDashboard() {
-    const savedToken = localStorage.getItem(sessionKey);
-    if (savedToken) {
-      window.history.pushState({}, '', '/dashboard');
-      setRoute('/dashboard');
-      setMobileOpen(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      loginDiscord();
-    }
+    setMobileOpen(false);
+    loginDiscord();
   }
-  function logoutDiscord() { localStorage.removeItem(sessionKey); setSessionToken(''); setProfile(null); setGuilds([]); setDashboardError(''); }
+  async function logoutDiscord() {
+    try { await fetch(`${AUTH_API}/auth/logout`, { method: 'POST', credentials: 'include' }); } catch { /* estado local será limpo mesmo se a rede falhar */ }
+    setSessionToken(n => n + 1); setProfile(null); setGuilds([]); setDashboardError('');
+  }
   function inviteBotToGuild(guildId) { window.location.href = `https://discord.com/oauth2/authorize?client_id=${botClientId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}&disable_guild_select=true`; }
 
   const page = route.replace(/\/+$/, '') || '/';
@@ -142,7 +130,7 @@ function App() {
             <button title="Sair da conta Discord" onClick={logoutDiscord}><LogOut size={17}/></button>
           </div>
         </header>
-        <div className="guild-toolbar"><span><Server size={17}/> Servidores que você pode gerenciar <b>{guilds.length}</b></span><button className="btn btn-outline btn-refresh" onClick={() => { setSessionToken(t => t ? `${t}` : ''); const t = localStorage.getItem(sessionKey); if(t){setDashboardLoading(true); fetch(`${AUTH_API}/api/guilds`,{headers:{Authorization:`Bearer ${t}`}}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error||'Falha ao atualizar.');setGuilds(d.guilds||[])}).catch(e=>setDashboardError(e.message)).finally(()=>setDashboardLoading(false));} }}><RefreshCw size={14}/> Atualizar</button></div>
+        <div className="guild-toolbar"><span><Server size={17}/> Servidores que você pode gerenciar <b>{guilds.length}</b></span><button className="btn btn-outline btn-refresh" onClick={() => { setSessionToken(n => n + 1); }}><RefreshCw size={14}/> Atualizar</button></div>
         {dashboardError && <div className="dashboard-alert"><ShieldCheck size={17}/>{dashboardError}</div>}
         {dashboardLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando seus servidores...</div> : guilds.length ? <div className="guild-grid">{guilds.map(guild => <article className="guild-card" key={guild.id}>
           <div className="guild-card-top">{guildIcon(guild) ? <img className="guild-icon" src={guild.icon} alt=""/> : <div className="guild-icon guild-icon-fallback"><Server size={24}/></div>}<div className="guild-title"><h3>{guild.name}</h3><small>{guild.owner ? 'Você é o dono' : 'Você pode gerenciar'}</small></div></div>
