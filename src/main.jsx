@@ -43,6 +43,15 @@ function App() {
   window.onpopstate = () => setRoute(window.location.pathname);
 
   useEffect(() => {
+    let cancelled = false;
+    fetch(`${AUTH_API}/api/me`, { credentials: 'include' })
+      .then(async r => { if (!r.ok) throw new Error('Sem sessão'); return r.json(); })
+      .then(me => { if (!cancelled) setProfile(me); })
+      .catch(() => { if (!cancelled) setProfile(null); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
     const authError = new URLSearchParams(window.location.search).get('auth_error');
     if (authError) {
       setDashboardError('O login foi cancelado ou não foi concluído. Tente conectar novamente.');
@@ -98,16 +107,17 @@ function App() {
         <img src="/vyntex.png" alt="Vyntex" /><span>Vyntex</span>
       </button>
       <nav className={`navlinks ${mobileOpen ? 'mobile-open' : ''}`}>
+        <button className={page === '/' ? 'nav-active' : ''} onClick={() => go('/')}>Início</button>
         <button className={isCommands ? 'nav-active' : ''} onClick={() => go('/commands')}>Comandos</button>
         <button className={isStore ? 'nav-active' : ''} onClick={() => go('/store')}>Loja</button>
         <button className={isPanel ? 'nav-active' : ''} onClick={openDashboard}>Dashboard</button>
         <div className="mobile-actions">
-          <a className="btn btn-light" href={botInvite}>Adicionar ao Discord <ArrowUpRight size={15}/></a>
+          {profile ? <div className="mobile-account"><div className="nav-account-info">{discordAvatar(profile) ? <img src={discordAvatar(profile)} alt="Avatar do Discord"/> : <div className="nav-avatar-fallback"><UserRound size={16}/></div>}<span>{profile.global_name || profile.username}</span></div><button className="btn btn-outline" onClick={logoutDiscord}><LogOut size={15}/> Sair da conta</button></div> : <a className="btn btn-light" href={botInvite}>Adicionar ao Discord <ArrowUpRight size={15}/></a>}
         </div>
       </nav>
       <div className="navright">
-        <button className="nav-login nav-open-panel" onClick={openDashboard}>Abrir painel</button>
-        <a className="btn btn-light nav-invite" href={botInvite}><Bot size={15}/> Adicionar ao Discord</a>
+        {!isPanel && <button className="nav-login nav-open-panel" onClick={openDashboard}>Abrir painel</button>}
+        {profile ? <div className="nav-account"><div className="nav-account-info">{discordAvatar(profile) ? <img src={discordAvatar(profile)} alt="Avatar do Discord"/> : <div className="nav-avatar-fallback"><UserRound size={16}/></div>}<span>{profile.global_name || profile.username}</span></div><button className="btn btn-outline nav-logout" onClick={logoutDiscord} title="Sair da conta"><LogOut size={15}/> Sair</button></div> : <a className="btn btn-light nav-invite" href={botInvite}><Bot size={15}/> Adicionar ao Discord</a>}
       </div>
       <button className="menu-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Abrir menu">{mobileOpen ? <X/> : <Menu/>}</button>
     </header>
