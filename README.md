@@ -32,3 +32,10 @@ npm run dev
 - `vercel.json` faz as rotas internas, como `/dashboard`, abrirem corretamente na Vercel.
 - A página de comandos contém exemplos iniciais; ajuste para corresponder aos comandos reais.
 - O favicon utiliza `public/vyntex.png`.
+
+
+## Painel de configuração por servidor
+
+Quando o usuário seleciona **Configurar servidor**, a interface abre em `/dashboard/ID_DO_SERVIDOR`. A tela usa uma navegação própria de painel, com menu lateral de categorias e seletor para voltar à lista de servidores. O fallback de rotas do Vercel já encaminha URLs para `index.html`.
+
+A interface permanece como prévia: as opções ainda não salvam configurações no backend e a verificação de permissões/instalação deve continuar sendo validada pelo backend antes de implementar gravação.

@@ -63,7 +63,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!(route.replace(/\/+$/, '') === '/dashboard' || route.replace(/\/+$/, '') === '/panel')) return;
+    if (!(/^\/dashboard(?:\/[^/]+)?\/?$/.test(route) || route.replace(/\/+$/, '') === '/panel')) return;
     let cancelled = false;
     setDashboardLoading(true);
     // As duas consultas usam a mesma sessão; executá-las em paralelo evita uma ida extra ao backend.
@@ -82,6 +82,25 @@ function App() {
     return () => { cancelled = true; };
   }, [route, sessionToken]);
 
+  useEffect(() => {
+    const currentPage = route.replace(/\/+$/, '') || '/';
+    const match = currentPage.match(/^\/dashboard\/([^/]+)$/);
+    if (!match || !guilds.length) {
+      if (!match) setSelectedGuild(null);
+      return;
+    }
+    const guild = guilds.find(item => item.id === match[1]);
+    if (guild && guild.botInstalled) setSelectedGuild(guild);
+    else if (guild) {
+      window.history.replaceState({}, '', '/dashboard');
+      setRoute('/dashboard');
+      setSelectedGuild(null);
+      setDashboardError('O Vyntex não está instalado neste servidor. Adicione o bot para configurá-lo.');
+    } else {
+      setDashboardError('Esse servidor não está disponível na sua lista ou você não tem permissão para gerenciá-lo.');
+    }
+  }, [route, guilds]);
+
   function loginDiscord() { window.location.href = `${AUTH_API}/auth/discord`; }
   function openDashboard() {
     setMobileOpen(false);
@@ -94,7 +113,7 @@ function App() {
   function inviteBotToGuild(guildId) { window.location.href = `https://discord.com/oauth2/authorize?client_id=${botClientId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}&disable_guild_select=true`; }
 
   const page = route.replace(/\/+$/, '') || '/';
-  const isPanel = page === '/dashboard' || page === '/panel';
+  const isPanel = page === '/dashboard' || page === '/panel' || /^\/dashboard\/[^/]+$/.test(page);
   const isCommands = page === '/commands';
   const isStore = page === '/store' || page === '/loja';
   const isTeam = page === '/team' || page === '/cargos';
@@ -119,7 +138,7 @@ function App() {
   const allCommands = commandGroups.flatMap(g => g.commands.map(c => ({ ...{ name:c[0], desc:c[1], group:g.title } })));
   const visibleCommands = allCommands.filter(c => `${c.name} ${c.desc} ${c.group}`.toLowerCase().includes(search.toLowerCase()));
 
-  return <div className="app-shell">
+  const serverConfigMode = isPanel && Boolean(selectedGuild) && /^\/dashboard\/[^/]+$/.test(page);\n\n  return <div className={`app-shell ${serverConfigMode ? 'dashboard-config-shell' : ''}`}>
     <header className="navbar">
       <button className="brand" onClick={() => go('/')} aria-label="Vyntex início">
         <img src="/vyntex.png" alt="Vyntex" /><span>Vyntex</span>
@@ -159,7 +178,18 @@ function App() {
           </div>
         </header>
         {selectedGuild ? <section className="server-settings-view">
-          <div className="settings-topline"><button className="btn btn-outline settings-back" onClick={() => setSelectedGuild(null)}><ArrowLeft size={15}/> Voltar aos servidores</button><span className="settings-preview-label"><Clock3 size={13}/> Prévia da configuração</span></div>
+          <aside className="config-app-sidebar">
+            <button className="config-brand" onClick={() => go('/dashboard')}><img src="/vyntex.png" alt=""/> <span>VYNTEX</span></button>
+            <button className="config-guild-switch" onClick={() => { setSelectedGuild(null); go('/dashboard'); }}>
+              {guildIcon(selectedGuild) ? <img src={selectedGuild.icon} alt=""/> : <span className="config-guild-fallback"><Server size={19}/></span>}
+              <span><strong>{selectedGuild.name}</strong><small>Configurações do servidor</small></span><ChevronRight size={15}/>
+            </button>
+            <div className="config-menu-label">CONFIGURAÇÕES</div>
+            {settingSections.map(item => { const Icon = item.icon; return <button key={item.id} className={`config-side-link ${activeSetting === item.id ? 'active' : ''}`} onClick={() => setActiveSetting(item.id)}><Icon size={17}/><span>{item.label}</span></button>; })}
+            <div className="config-sidebar-bottom"><button onClick={() => { setSelectedGuild(null); go('/dashboard'); }}><ArrowLeft size={16}/> Todos os servidores</button><div className="config-sidebar-user">{discordAvatar(profile) ? <img src={discordAvatar(profile)} alt=""/> : <UserRound size={18}/>}<span>{profile.global_name || profile.username}</span><button onClick={logoutDiscord} title="Sair"><LogOut size={15}/></button></div></div>
+          </aside>
+          <div className="config-workspace">
+          <div className="settings-topline"><button className="btn btn-outline settings-back" onClick={() => { setSelectedGuild(null); go('/dashboard'); }}}><ArrowLeft size={15}/> Voltar aos servidores</button><span className="settings-preview-label"><Clock3 size={13}/> Prévia da configuração</span></div>
           <div className="selected-server-banner">
             {guildIcon(selectedGuild) ? <img className="selected-server-icon" src={selectedGuild.icon} alt=""/> : <div className="selected-server-icon selected-server-fallback"><Server size={24}/></div>}
             <div className="selected-server-copy"><div className="eyebrow">CONFIGURAÇÕES DO SERVIDOR</div><h2>{selectedGuild.name}</h2><p>Organize os recursos do Vyntex em um só lugar.</p></div>
@@ -181,11 +211,12 @@ function App() {
               <div className="settings-footer-note"><LockKeyhole size={14}/> As opções ainda não salvam alterações nesta versão.</div>
             </div>
           </div>
+          </div>
         </section> : <><div className="guild-toolbar"><span><Server size={17}/> Servidores que você pode gerenciar <b>{guilds.length}</b></span><button className="btn btn-outline btn-refresh" onClick={() => { setSessionToken(n => n + 1); }}><RefreshCw size={14}/> Atualizar</button></div>
         {dashboardError && <div className="dashboard-alert"><ShieldCheck size={17}/>{dashboardError}</div>}
         {dashboardLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando seus servidores...</div> : guilds.length ? <div className="guild-grid">{guilds.map(guild => <article className="guild-card" key={guild.id}>
           <div className="guild-card-top">{guildIcon(guild) ? <img className="guild-icon" src={guild.icon} alt=""/> : <div className="guild-icon guild-icon-fallback"><Server size={24}/></div>}<div className="guild-title"><h3>{guild.name}</h3><small>{guild.owner ? 'Você é o dono' : 'Você pode gerenciar'}</small></div></div>
-          <div className="guild-card-bottom">{guild.botInstalled ? <button className="btn btn-primary guild-action" onClick={() => { setSelectedGuild(guild); setActiveSetting('welcome'); }}><Settings2 size={16}/> Configurar servidor</button> : <button className="btn btn-outline guild-action" onClick={() => inviteBotToGuild(guild.id)}><Bot size={16}/> Adicionar ao servidor <ExternalLink size={14}/></button>}</div>
+          <div className="guild-card-bottom">{guild.botInstalled ? <button className="btn btn-primary guild-action" onClick={() => { setSelectedGuild(guild); setActiveSetting('welcome'); go(`/dashboard/${guild.id}`); }}><Settings2 size={16}/> Configurar servidor</button> : <button className="btn btn-outline guild-action" onClick={() => inviteBotToGuild(guild.id)}><Bot size={16}/> Adicionar ao servidor <ExternalLink size={14}/></button>}</div>
           {guild.botInstalled && <span className="guild-installed"><Check size={13}/> Vyntex conectado</span>}
         </article>)}</div> : <div className="guild-empty"><Server size={28}/><strong>Nenhum servidor encontrado</strong><span>Verifique se sua conta tem permissão de gerenciar algum servidor no Discord.</span></div>}
         <p className="footnote">Só aparecem servidores nos quais sua conta tem permissão de gerenciamento.</p></> }
