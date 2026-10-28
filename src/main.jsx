@@ -191,7 +191,7 @@ function App() {
             <div className="config-sidebar-bottom"><button onClick={() => { setSelectedGuild(null); go('/dashboard'); }}><ArrowLeft size={16}/> Todos os servidores</button><div className="config-sidebar-user">{discordAvatar(profile) ? <img src={discordAvatar(profile)} alt=""/> : <UserRound size={18}/>}<span>{profile.global_name || profile.username}</span><button onClick={logoutDiscord} title="Sair"><LogOut size={15}/></button></div></div>
           </aside>
           <div className="config-workspace">
-          <div className="settings-topline"><button className="btn btn-outline settings-back" onClick={() => { setSelectedGuild(null); go('/dashboard'); }}}><ArrowLeft size={15}/> Voltar aos servidores</button><span className="settings-preview-label"><Clock3 size={13}/> Prévia da configuração</span></div>
+          <div className="settings-topline"><button className="btn btn-outline settings-back" onClick={() => { setSelectedGuild(null); go('/dashboard'); }}><ArrowLeft size={15}/> Voltar aos servidores</button><span className="settings-preview-label"><Clock3 size={13}/> Prévia da configuração</span></div>
           <div className="selected-server-banner">
             {guildIcon(selectedGuild) ? <img className="selected-server-icon" src={selectedGuild.icon} alt=""/> : <div className="selected-server-icon selected-server-fallback"><Server size={24}/></div>}
             <div className="selected-server-copy"><div className="eyebrow">CONFIGURAÇÕES DO SERVIDOR</div><h2>{selectedGuild.name}</h2><p>Organize os recursos do Vyntex em um só lugar.</p></div>
