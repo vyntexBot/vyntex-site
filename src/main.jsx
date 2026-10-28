@@ -138,7 +138,9 @@ function App() {
   const allCommands = commandGroups.flatMap(g => g.commands.map(c => ({ ...{ name:c[0], desc:c[1], group:g.title } })));
   const visibleCommands = allCommands.filter(c => `${c.name} ${c.desc} ${c.group}`.toLowerCase().includes(search.toLowerCase()));
 
-  const serverConfigMode = isPanel && Boolean(selectedGuild) && /^\/dashboard\/[^/]+$/.test(page);\n\n  return <div className={`app-shell ${serverConfigMode ? 'dashboard-config-shell' : ''}`}>
+  const serverConfigMode = isPanel && Boolean(selectedGuild) && /^\/dashboard\/[^/]+$/.test(page);
+
+  return <div className={`app-shell ${serverConfigMode ? 'dashboard-config-shell' : ''}`}>
     <header className="navbar">
       <button className="brand" onClick={() => go('/')} aria-label="Vyntex início">
         <img src="/vyntex.png" alt="Vyntex" /><span>Vyntex</span>
