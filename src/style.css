@@ -164,3 +164,145 @@ html, body, *{
  .dashboard-config-shell .selected-server-banner{flex-wrap:wrap}
  .dashboard-config-shell .settings-main-panel{padding:16px}
 }
+
+
+/* Vyntex motion design: microinterações suaves e respeitando acessibilidade */
+:root{--vyntex-motion-fast:180ms;--vyntex-motion:280ms;--vyntex-ease:cubic-bezier(.2,.75,.25,1)}
+@keyframes vyntexFadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes vyntexFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes vyntexGlow{0%,100%{opacity:.28;transform:scale(.96)}50%{opacity:.52;transform:scale(1.04)}}
+@keyframes vyntexPulse{0%,100%{box-shadow:0 0 0 0 rgba(90,150,255,0)}50%{box-shadow:0 0 0 5px rgba(90,150,255,.07)}}
+@keyframes vyntexShimmer{from{background-position:150% 0}to{background-position:-150% 0}}
+
+/* Entrada discreta das áreas principais */
+.dashboard-page,.subpage,.hero-copy,.hero-art,.section-heading,.feature-card,.price-card,.team-card,.command-card,.faq-item,.cta-band{animation:vyntexFadeUp .55s var(--vyntex-ease) both}
+.hero-art{animation-delay:90ms}.section-heading{animation-delay:50ms}
+.feature-card:nth-child(2),.command-card:nth-child(2),.price-card:nth-child(2){animation-delay:45ms}
+.feature-card:nth-child(3),.command-card:nth-child(3){animation-delay:85ms}
+.feature-card:nth-child(4),.command-card:nth-child(4){animation-delay:125ms}
+
+/* Botões e navegação com feedback claro */
+button,a,.btn,.config-side-link,.config-guild-switch,.settings-row,.settings-nav-item{transition:color var(--vyntex-motion-fast) ease,background-color var(--vyntex-motion-fast) ease,border-color var(--vyntex-motion-fast) ease,box-shadow var(--vyntex-motion) var(--vyntex-ease),transform var(--vyntex-motion) var(--vyntex-ease)}
+.btn:hover,.config-sidebar-bottom>button:hover{transform:translateY(-2px)}
+.btn:active,button:active{transform:translateY(0) scale(.985)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #83aaff;outline-offset:3px}
+.config-side-link{position:relative;overflow:hidden}
+.config-side-link::after{content:"";position:absolute;left:12px;right:12px;bottom:4px;height:1px;background:linear-gradient(90deg,transparent,#e4e5e8,transparent);transform:scaleX(0);transform-origin:center;transition:transform var(--vyntex-motion) var(--vyntex-ease)}
+.config-side-link:hover::after,.config-side-link.active::after{transform:scaleX(1)}
+.config-side-link.active{animation:vyntexPulse 2.8s ease-in-out infinite}
+
+/* Cards com elevação suave e brilho sutil */
+.feature-card,.price-card,.command-card,.team-card,.settings-main-panel,.dashboard-stat-card,.server-card,.guild-card{transform:translateZ(0);transition:transform var(--vyntex-motion) var(--vyntex-ease),border-color var(--vyntex-motion) ease,box-shadow var(--vyntex-motion) ease}
+.feature-card:hover,.price-card:hover,.command-card:hover,.team-card:hover,.server-card:hover,.guild-card:hover{transform:translateY(-4px);border-color:rgba(112,151,255,.35);box-shadow:0 16px 38px rgba(0,0,0,.18)}
+.dashboard-config-shell .settings-main-panel{animation:vyntexFadeUp .42s var(--vyntex-ease) both;box-shadow:0 18px 55px rgba(0,0,0,.13)}
+.config-guild-switch:hover{background:#202124;border-color:#42444a;transform:translateY(-1px)}
+.config-brand img{transition:transform .45s var(--vyntex-ease),filter .3s ease}
+.config-brand:hover img{transform:rotate(-7deg) scale(1.06);filter:drop-shadow(0 0 9px rgba(100,145,255,.28))}
+.config-guild-switch>img,.config-guild-fallback,.selected-server-icon{transition:transform var(--vyntex-motion) var(--vyntex-ease),box-shadow var(--vyntex-motion) ease}
+.config-guild-switch:hover>img,.config-guild-switch:hover .config-guild-fallback{transform:scale(1.045)}
+.selected-server-icon{box-shadow:0 5px 20px rgba(0,0,0,.18)}
+
+/* Indicadores visuais da Vyntex */
+.dashboard-config-shell .config-workspace{position:relative;isolation:isolate}
+.dashboard-config-shell .config-workspace::before{content:"";position:absolute;z-index:-1;pointer-events:none;top:-120px;right:5%;width:360px;height:260px;border-radius:50%;background:radial-gradient(ellipse,rgba(60,95,170,.10),transparent 70%);filter:blur(12px);animation:vyntexGlow 8s ease-in-out infinite}
+.dashboard-config-shell .server-connected{animation:vyntexFadeIn .5s ease both}
+.dashboard-config-shell .settings-preview-note{transition:border-color var(--vyntex-motion) ease,background var(--vyntex-motion) ease}
+.dashboard-config-shell .settings-preview-note:hover{border-color:#41434a;background:#1c1d20}
+.pulse{animation:vyntexPulse 2.2s ease-in-out infinite}
+
+/* Scrollbar combinando com o tema escuro */
+*{scrollbar-width:thin;scrollbar-color:#41434a #101113}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:#101113}
+*::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#4a4c53,#303237);border:2px solid #101113;border-radius:999px}
+*::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#747780,#4b4e56)}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Vyntex motion system: microinteractions suaves e respeitosas */
+:root{--motion-fast:180ms;--motion-medium:280ms;--motion-slow:650ms;--ease-out:cubic-bezier(.22,1,.36,1)}
+html{scroll-behavior:smooth;scroll-padding-top:96px}
+body{overscroll-behavior-y:none}
+button,a,.feature-card,.price-card,.command-card,.team-card,.settings-sidebar,.settings-main-panel,.selected-server-banner,.config-side-link,.settings-nav-item{transition:color var(--motion-fast) ease,background-color var(--motion-fast) ease,border-color var(--motion-fast) ease,box-shadow var(--motion-medium) var(--ease-out),transform var(--motion-medium) var(--ease-out),opacity var(--motion-medium) ease}
+button:focus-visible,a:focus-visible{outline:2px solid #80a8ff;outline-offset:4px}
+.app-shell{isolation:isolate}
+.app-shell:before{content:"";position:fixed;inset:-25% -10% auto;height:65vh;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 12% 8%,rgba(40,105,255,.11),transparent 43%),radial-gradient(ellipse at 90% 25%,rgba(0,217,255,.065),transparent 38%);animation:vyntex-ambient 16s ease-in-out infinite alternate}
+.navbar{transition:background var(--motion-medium) ease,border-color var(--motion-medium) ease,box-shadow var(--motion-medium) ease,transform var(--motion-medium) var(--ease-out)}
+.navbar:hover{border-color:rgba(115,151,255,.32);box-shadow:0 12px 45px #0003,0 0 24px #2869ff0a}
+.brand img{transition:transform 450ms var(--ease-out),filter 450ms ease}
+.brand:hover img{transform:rotate(-8deg) scale(1.08);filter:drop-shadow(0 0 10px #2869ff55)}
+.navlinks button{position:relative}
+.navlinks button:after{content:"";position:absolute;left:8px;right:8px;bottom:5px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--cyan));transform:scaleX(0);transform-origin:left;transition:transform var(--motion-medium) var(--ease-out)}
+.navlinks button:hover:after{transform:scaleX(1)}
+.btn{position:relative;overflow:hidden;isolation:isolate}
+.btn:before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(110deg,transparent 20%,rgba(255,255,255,.16) 48%,transparent 76%);transform:translateX(-130%);transition:transform 650ms var(--ease-out)}
+.btn:hover:before{transform:translateX(130%)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 38px #245eff45,0 0 0 1px #80a8ff30}
+.btn-light:hover,.btn-secondary:hover,.btn-outline:hover{transform:translateY(-2px)}
+.hero-copy{animation:vyntex-enter .7s var(--ease-out) both}
+.hero-art{animation:vyntex-enter .9s .1s var(--ease-out) both}
+.hero-logo{animation:vyntex-float 7s ease-in-out infinite;transition:filter 400ms ease,transform 400ms ease}
+.hero-logo:hover{filter:drop-shadow(0 22px 70px #0759ff6b);transform:scale(1.025)}
+.logo-aura{animation:vyntex-aura 5s ease-in-out infinite alternate}
+.orbit-one{animation:vyntex-orbit 22s linear infinite}
+.orbit-two{animation:vyntex-orbit-reverse 29s linear infinite}
+.float-card{transition:transform 300ms var(--ease-out),border-color 300ms ease,box-shadow 300ms ease}
+.card-ticket{animation:vyntex-float-card 5.2s ease-in-out infinite}
+.card-mod{animation:vyntex-float-card 5.8s .6s ease-in-out infinite}
+.float-card:hover{transform:translateY(-5px) scale(1.025);border-color:#638aff80;box-shadow:0 18px 50px #0007,0 0 24px #2869ff14}
+.pulse{animation:vyntex-pulse 2.2s ease-in-out infinite}
+.status-pill{transition:background var(--motion-medium) ease,border-color var(--motion-medium) ease}
+.status-pill:hover{background:#1c32654d;border-color:#6489ff70}
+.feature-card,.price-card,.command-card,.team-card{will-change:transform}
+.feature-card:hover,.price-card:hover,.command-card:hover,.team-card:hover{transform:translateY(-5px);border-color:#456de45c;box-shadow:0 18px 44px #0003,0 0 22px #2869ff0b}
+.feature-icon{transition:transform 350ms var(--ease-out),background 350ms ease,color 350ms ease}
+.feature-card:hover .feature-icon{transform:translateY(-3px) rotate(-4deg);background:#2556a85c;color:#c4d8ff}
+.feature-decoration{transition:transform 500ms var(--ease-out),color 500ms ease}
+.feature-card:hover .feature-decoration{transform:rotate(0deg) scale(1.08);color:#245ce540}
+.ticket-preview{transition:transform 450ms var(--ease-out),border-color 450ms ease}
+.feature-card:hover .ticket-preview{transform:translateY(-4px);border-color:#4969b7}
+.section-heading,.section-wrap>.eyebrow{animation:vyntex-enter .65s var(--ease-out) both}
+.faq-item>button span:last-child{display:inline-grid;place-items:center;width:28px;height:28px;border:1px solid transparent;border-radius:8px;transition:transform 220ms var(--ease-out),background 220ms ease,border-color 220ms ease}
+.faq-item>button:hover span:last-child{background:#1b2c51;border-color:#2d5acb66}
+.faq-item.open>button span:last-child{transform:rotate(180deg)}
+.faq-item p{animation:vyntex-reveal .28s var(--ease-out) both}
+.footer-brand:hover{transform:translateY(-2px)}
+/* Dashboard individual por servidor */
+.dashboard-config-shell:before{background:radial-gradient(ellipse at 10% 0%,rgba(40,105,255,.13),transparent 43%),radial-gradient(ellipse at 92% 25%,rgba(0,217,255,.055),transparent 38%)}
+.config-app-sidebar{animation:vyntex-slide-in .55s var(--ease-out) both}
+.config-brand img{transition:transform 400ms var(--ease-out),filter 400ms ease}
+.config-brand:hover img{transform:rotate(-7deg) scale(1.08);filter:drop-shadow(0 0 10px #2869ff66)}
+.config-side-link{position:relative;overflow:hidden}
+.config-side-link:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#2869ff14,transparent);opacity:0;transition:opacity 220ms ease}
+.config-side-link:hover:before,.config-side-link.active:before{opacity:1}
+.config-side-link:hover{transform:translateX(3px);color:#f5f6ff;border-color:#3d4c70}
+.config-workspace{animation:vyntex-enter .5s .06s var(--ease-out) both}
+.settings-back:hover{transform:translateX(-3px)}
+.selected-server-banner{position:relative;overflow:hidden}
+.selected-server-banner:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 25%,#ffffff08 48%,transparent 70%);transform:translateX(-100%);animation:vyntex-banner-sheen 8s ease-in-out infinite}
+.selected-server-icon{transition:transform 350ms var(--ease-out),box-shadow 350ms ease}
+.selected-server-banner:hover .selected-server-icon{transform:rotate(-3deg) scale(1.04);box-shadow:0 7px 22px #0005}
+.settings-sidebar,.settings-main-panel{animation:vyntex-enter .55s var(--ease-out) both}
+.settings-main-panel{animation-delay:.06s}
+.settings-nav-item{position:relative;overflow:hidden}
+.settings-nav-item:before{content:"";position:absolute;left:0;top:20%;bottom:20%;width:2px;border-radius:2px;background:linear-gradient(var(--blue),var(--cyan));transform:scaleY(0);transition:transform 240ms var(--ease-out)}
+.settings-nav-item:hover{transform:translateX(2px)}
+.settings-nav-item.selected:before{transform:scaleY(1)}
+.settings-feature-icon{transition:transform 350ms var(--ease-out),box-shadow 350ms ease}
+.settings-main-panel:hover .settings-feature-icon{transform:rotate(-4deg) scale(1.04);box-shadow:0 0 22px #2869ff14}
+.fake-toggle{transition:background 220ms ease,border-color 220ms ease,box-shadow 220ms ease}
+.fake-toggle:after{transition:transform 220ms var(--ease-out),background 220ms ease}
+.fake-toggle:hover{box-shadow:0 0 0 4px #2869ff12}
+@keyframes vyntex-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes vyntex-slide-in{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes vyntex-reveal{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes vyntex-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes vyntex-float-card{0%,100%{translate:0 0}50%{translate:0 -6px}}
+@keyframes vyntex-aura{from{opacity:.55;transform:scale(.92)}to{opacity:1;transform:scale(1.08)}}
+@keyframes vyntex-orbit{from{transform:rotate(-24deg)}to{transform:rotate(336deg)}}
+@keyframes vyntex-orbit-reverse{from{transform:rotate(25deg)}to{transform:rotate(-335deg)}}
+@keyframes vyntex-pulse{0%,100%{box-shadow:0 0 0 0 #39e9a600}50%{box-shadow:0 0 0 5px #39e9a61c}}
+@keyframes vyntex-ambient{from{opacity:.65;transform:translate3d(-1%,0,0)}to{opacity:1;transform:translate3d(1%,2%,0)}}
+@keyframes vyntex-banner-sheen{0%,65%,100%{transform:translateX(-100%)}82%{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media(max-width:650px){.hero-copy,.hero-art,.config-workspace{animation-duration:.45s}.float-card{animation:none}}
