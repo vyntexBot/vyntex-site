@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client';
 import {
   Menu, X, ChevronRight, ShieldCheck, Ticket, Zap, Users, MessageSquare,
   Settings2, Check, ArrowUpRight, Command, LockKeyhole, Sparkles, Crown,
-  Activity, Headphones, Bot, LayoutDashboard, Gamepad2, Server, ExternalLink, RefreshCw, LogOut, UserRound
+  Activity, Headphones, Bot, LayoutDashboard, Gamepad2, Server, ExternalLink, RefreshCw, LogOut, UserRound,
+  ArrowLeft, BellRing, ClipboardList, ShieldAlert, UsersRound, MessageCircle, Instagram, Lightbulb, Hash, SlidersHorizontal, Clock3
 } from 'lucide-react';
 import './style.css';
 
@@ -33,6 +34,8 @@ function App() {
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState('');
   const [sessionToken, setSessionToken] = useState(0);
+  const [selectedGuild, setSelectedGuild] = useState(null);
+  const [activeSetting, setActiveSetting] = useState('welcome');
 
   function go(path) {
     window.history.pushState({}, '', path);
@@ -95,6 +98,18 @@ function App() {
   const isCommands = page === '/commands';
   const isStore = page === '/store' || page === '/loja';
   const isTeam = page === '/team' || page === '/cargos';
+  const settingSections = [
+    { id: 'welcome', label: 'Boas-vindas', desc: 'Mensagem e canal de entrada', icon: BellRing, status: 'Preparando' },
+    { id: 'logs', label: 'Logs', desc: 'Registros do servidor', icon: ClipboardList, status: 'Preparando' },
+    { id: 'moderation', label: 'Moderação', desc: 'Regras e punições', icon: ShieldAlert, status: 'Preparando' },
+    { id: 'tickets', label: 'Tickets', desc: 'Atendimento da comunidade', icon: MessageSquare, status: 'Preparando' },
+    { id: 'autorole', label: 'Cargos automáticos', desc: 'Cargos ao entrar', icon: UsersRound, status: 'Preparando' },
+    { id: 'antiraid', label: 'Anti-raid e anti-spam', desc: 'Proteção contra ataques', icon: ShieldCheck, status: 'Preparando' },
+    { id: 'suggestions', label: 'Sugestões', desc: 'Painel de ideias e votação', icon: Lightbulb, status: 'Preparando' },
+    { id: 'instagram', label: 'Instagram', desc: 'Avisos de novas publicações', icon: Instagram, status: 'Preparando' },
+  ];
+  const currentSetting = settingSections.find(item => item.id === activeSetting) || settingSections[0];
+  const CurrentSettingIcon = currentSetting.icon;
 
   const commandGroups = [
     { title: 'Tickets', icon: Ticket, commands: [['/ticket', 'Envia o painel para abrir tickets.'], ['/fechar', 'Fecha o ticket atual.'], ['/adicionar', 'Adiciona uma pessoa ao ticket.'], ['/remover', 'Remove uma pessoa do ticket.']] },
@@ -143,14 +158,37 @@ function App() {
             <button title="Sair da conta Discord" onClick={logoutDiscord}><LogOut size={17}/></button>
           </div>
         </header>
-        <div className="guild-toolbar"><span><Server size={17}/> Servidores que você pode gerenciar <b>{guilds.length}</b></span><button className="btn btn-outline btn-refresh" onClick={() => { setSessionToken(n => n + 1); }}><RefreshCw size={14}/> Atualizar</button></div>
+        {selectedGuild ? <section className="server-settings-view">
+          <div className="settings-topline"><button className="btn btn-outline settings-back" onClick={() => setSelectedGuild(null)}><ArrowLeft size={15}/> Voltar aos servidores</button><span className="settings-preview-label"><Clock3 size={13}/> Prévia da configuração</span></div>
+          <div className="selected-server-banner">
+            {guildIcon(selectedGuild) ? <img className="selected-server-icon" src={selectedGuild.icon} alt=""/> : <div className="selected-server-icon selected-server-fallback"><Server size={24}/></div>}
+            <div className="selected-server-copy"><div className="eyebrow">CONFIGURAÇÕES DO SERVIDOR</div><h2>{selectedGuild.name}</h2><p>Organize os recursos do Vyntex em um só lugar.</p></div>
+            <span className="server-connected"><Check size={13}/> Vyntex conectado</span>
+          </div>
+          <div className="settings-layout">
+            <aside className="settings-sidebar"><div className="settings-sidebar-title"><SlidersHorizontal size={15}/> CATEGORIAS</div>{settingSections.map(item => { const Icon = item.icon; return <button key={item.id} className={`settings-nav-item ${activeSetting === item.id ? 'selected' : ''}`} onClick={() => setActiveSetting(item.id)}><Icon size={17}/><span>{item.label}<small>{item.desc}</small></span><ChevronRight size={14}/></button>; })}</aside>
+            <div className="settings-main-panel">
+              <div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">EM BREVE</span></div>
+              <div className="settings-preview-note"><Sparkles size={18}/><div><strong>Estamos preparando este sistema</strong><p>Esta é a estrutura visual inicial. Os controles serão conectados ao bot e ao banco de dados na próxima etapa.</p></div></div>
+              {activeSetting === 'welcome' && <div className="settings-form-preview"><label>Canal de boas-vindas</label><div className="fake-select"><span><Hash size={15}/> selecione-um-canal</span><ChevronRight size={15}/></div><label>Mensagem de entrada</label><div className="fake-textarea">Olá, {`{usuário}`}! Seja bem-vindo(a) ao servidor {`{servidor}`}.</div><div className="settings-row"><span><strong>Enviar mensagem ao entrar</strong><small>Ativar o aviso de novos membros</small></span><span className="fake-toggle"/></div></div>}
+              {activeSetting === 'logs' && <div className="settings-form-preview"><label>Canal de registros</label><div className="fake-select"><span><Hash size={15}/> selecione-um-canal-de-logs</span><ChevronRight size={15}/></div><div className="settings-row"><span><strong>Registrar ações de moderação</strong><small>Banimentos, expulsões e timeouts</small></span><span className="fake-toggle"/></div><div className="settings-row"><span><strong>Registrar entrada e saída</strong><small>Eventos de membros</small></span><span className="fake-toggle"/></div></div>}
+              {activeSetting === 'moderation' && <div className="settings-form-preview"><div className="settings-row"><span><strong>Filtro anti-spam</strong><small>Detectar mensagens repetidas</small></span><span className="fake-toggle"/></div><div className="settings-row"><span><strong>Links suspeitos</strong><small>Preparar regras de bloqueio</small></span><span className="fake-toggle"/></div><div className="settings-row"><span><strong>Menções em excesso</strong><small>Limitar mensagens com muitas menções</small></span><span className="fake-toggle"/></div></div>}
+              {activeSetting === 'tickets' && <div className="settings-form-preview"><label>Canal do painel de tickets</label><div className="fake-select"><span><Hash size={15}/> selecione-um-canal</span><ChevronRight size={15}/></div><label>Cargo da equipe de atendimento</label><div className="fake-select"><span><UsersRound size={15}/> selecione-um-cargo</span><ChevronRight size={15}/></div><div className="settings-row"><span><strong>Mensagem de abertura</strong><small>Personalize o texto do painel</small></span><span className="fake-toggle"/></div></div>}
+              {activeSetting === 'autorole' && <div className="settings-form-preview"><label>Cargo automático</label><div className="fake-select"><span><UsersRound size={15}/> selecione-um-cargo</span><ChevronRight size={15}/></div><div className="settings-row"><span><strong>Aplicar a novos membros</strong><small>Entregar o cargo assim que entrarem</small></span><span className="fake-toggle"/></div></div>}
+              {activeSetting === 'antiraid' && <div className="settings-form-preview">{[['Proteção contra entradas em massa','Detectar muitas entradas em pouco tempo'],['Anti-spam','Sinalizar mensagens repetidas'],['Proteção contra menções','Detectar excesso de menções']].map(([title,desc])=><div className="settings-row" key={title}><span><strong>{title}</strong><small>{desc}</small></span><span className="fake-toggle"/></div>)}</div>}
+              {activeSetting === 'suggestions' && <div className="settings-form-preview"><label>Canal de sugestões</label><div className="fake-select"><span><Hash size={15}/> sugestoes</span><ChevronRight size={15}/></div><label>Texto do painel</label><div className="fake-textarea">Tem uma ideia para melhorar o servidor? Envie sua sugestão aqui!</div><div className="settings-row"><span><strong>Permitir votação</strong><small>Reações para apoiar ou reprovar ideias</small></span><span className="fake-toggle"/></div></div>}
+              {activeSetting === 'instagram' && <div className="settings-form-preview"><label>Nome de usuário do Instagram</label><div className="fake-input">@seu_perfil</div><label>Canal para avisos</label><div className="fake-select"><span><Hash size={15}/> novidades</span><ChevronRight size={15}/></div><div className="settings-row"><span><strong>Avisar sobre novas publicações</strong><small>Enviar anúncio no canal escolhido</small></span><span className="fake-toggle"/></div></div>}
+              <div className="settings-footer-note"><LockKeyhole size={14}/> As opções ainda não salvam alterações nesta versão.</div>
+            </div>
+          </div>
+        </section> : <><div className="guild-toolbar"><span><Server size={17}/> Servidores que você pode gerenciar <b>{guilds.length}</b></span><button className="btn btn-outline btn-refresh" onClick={() => { setSessionToken(n => n + 1); }}><RefreshCw size={14}/> Atualizar</button></div>
         {dashboardError && <div className="dashboard-alert"><ShieldCheck size={17}/>{dashboardError}</div>}
         {dashboardLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando seus servidores...</div> : guilds.length ? <div className="guild-grid">{guilds.map(guild => <article className="guild-card" key={guild.id}>
           <div className="guild-card-top">{guildIcon(guild) ? <img className="guild-icon" src={guild.icon} alt=""/> : <div className="guild-icon guild-icon-fallback"><Server size={24}/></div>}<div className="guild-title"><h3>{guild.name}</h3><small>{guild.owner ? 'Você é o dono' : 'Você pode gerenciar'}</small></div></div>
-          <div className="guild-card-bottom">{guild.botInstalled ? <button className="btn btn-primary guild-action" onClick={() => alert(`Servidor selecionado: ${guild.name}. A tela de configurações detalhadas será conectada na próxima etapa.`)}><Settings2 size={16}/> Configurar servidor</button> : <button className="btn btn-outline guild-action" onClick={() => inviteBotToGuild(guild.id)}><Bot size={16}/> Adicionar ao servidor <ExternalLink size={14}/></button>}</div>
+          <div className="guild-card-bottom">{guild.botInstalled ? <button className="btn btn-primary guild-action" onClick={() => { setSelectedGuild(guild); setActiveSetting('welcome'); }}><Settings2 size={16}/> Configurar servidor</button> : <button className="btn btn-outline guild-action" onClick={() => inviteBotToGuild(guild.id)}><Bot size={16}/> Adicionar ao servidor <ExternalLink size={14}/></button>}</div>
           {guild.botInstalled && <span className="guild-installed"><Check size={13}/> Vyntex conectado</span>}
         </article>)}</div> : <div className="guild-empty"><Server size={28}/><strong>Nenhum servidor encontrado</strong><span>Verifique se sua conta tem permissão de gerenciar algum servidor no Discord.</span></div>}
-        <p className="footnote">Só aparecem servidores nos quais sua conta tem permissão de gerenciamento.</p>
+        <p className="footnote">Só aparecem servidores nos quais sua conta tem permissão de gerenciamento.</p></> }
       </section>}
     </main> :
     isCommands ? <main className="subpage commands-page">
