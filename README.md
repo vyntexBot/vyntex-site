@@ -40,6 +40,10 @@ Quando o usuário seleciona **Configurar servidor**, a interface abre em `/dashb
 
 A interface de Welcome e Booster é conectada ao backend por cookie de sessão e permite carregar canais, editar campos e salvar configurações por servidor. O backend continua sendo responsável por sessão, permissões e validação; as demais categorias permanecem como prévias.
 
+### Painel de Welcome
+
+O editor de Welcome usa canais reais retornados pelo backend, pesquisa de canais, templates, variáveis, mensagem normal ou embed, pré-visualização em tempo real, restauração de alterações, salvamento e envio de teste sem persistir o rascunho. O teste usa `POST /api/guilds/:guildId/welcome/test` e mantém a validação de sessão, permissões e canal no backend. Booster continua disponível pela mesma API.
+
 ### Variáveis do frontend
 
 Copie `.env.example` para `.env` apenas se precisar trocar os valores padrão:
