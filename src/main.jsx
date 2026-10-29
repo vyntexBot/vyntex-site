@@ -92,7 +92,14 @@ function WelcomePreview({ form, guildName, profile }) {
   </div>;
 }
 
-function WelcomeSettingsEditor({ config, channels, loading, saving, testing, error, notice, onSave, onTest, guildName, profile }) {
+function explainSettingsError(error) {
+  if (!error) return '';
+  if (/abort|timeout|demorou/i.test(error)) return 'A API demorou para responder. Verifique se o backend está disponível e tente novamente.';
+  if (/401|sess[aã]o|login/i.test(error)) return 'A sua sessão expirou. Entre novamente com o Discord para continuar.';
+  return error;
+}
+
+function WelcomeSettingsEditor({ config, channels, loading, saving, testing, error, notice, onSave, onTest, onRetry, guildName, profile }) {
   const [form, setForm] = useState(config || {});
   const [channelSearch, setChannelSearch] = useState('');
   const [lastField, setLastField] = useState('content');
@@ -105,6 +112,7 @@ function WelcomeSettingsEditor({ config, channels, loading, saving, testing, err
   const focusField = (key, ref) => { setLastField(key); if (ref) contentRef.current = ref; };
   const insertVariable = token => update(lastField, `${form[lastField] || ''}${token}`);
   const applyTemplate = template => { setForm(current => ({ ...current, ...template.values })); setTemplateNotice(`${template.name} aplicado. Revise a prévia e salve quando estiver pronto.`); };
+  if (error) return <div className="settings-load-error"><ShieldAlert size={20}/><div><strong>Não foi possível carregar o Welcome</strong><p>{explainSettingsError(error)}</p><button type="button" className="btn btn-outline" onClick={onRetry}><RefreshCw size={15}/> Tentar novamente</button></div></div>;
   if (loading || !config) return <div className="guild-empty settings-loading"><RefreshCw className="spin"/> Carregando configurações...</div>;
   return <div className="welcome-builder">
     {error && <div className="dashboard-alert settings-form-alert"><ShieldAlert size={17}/>{error}</div>}
@@ -142,6 +150,7 @@ function App() {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsTesting, setSettingsTesting] = useState(false);
+  const [settingsRetry, setSettingsRetry] = useState(0);
   const [settingsError, setSettingsError] = useState('');
   const [settingsNotice, setSettingsNotice] = useState('');
 
@@ -234,12 +243,14 @@ function App() {
   useEffect(() => {
     if (!selectedGuild?.id) return;
     let cancelled = false;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
     setSettingsLoading(true); setSettingsError(''); setSettingsNotice('');
     const base = `${AUTH_API}/api/guilds/${selectedGuild.id}`;
     Promise.all([
-      fetch(`${base}/welcome`, { credentials: 'include' }),
-      fetch(`${base}/booster`, { credentials: 'include' }),
-      fetch(`${base}/channels`, { credentials: 'include' }),
+      fetch(`${base}/welcome`, { credentials: 'include', signal: controller.signal }),
+      fetch(`${base}/booster`, { credentials: 'include', signal: controller.signal }),
+      fetch(`${base}/channels`, { credentials: 'include', signal: controller.signal }),
     ]).then(async responses => {
       const payloads = await Promise.all(responses.map(response => response.json()));
       const failed = responses.findIndex(response => !response.ok);
@@ -247,8 +258,8 @@ function App() {
       if (!cancelled) setSettingsData({ welcome: payloads[0], booster: payloads[1], channels: payloads[2].channels || [] });
     }).catch(error => { if (!cancelled) setSettingsError(error.message || 'Não foi possível carregar as configurações.'); })
       .finally(() => { if (!cancelled) setSettingsLoading(false); });
-    return () => { cancelled = true; };
-  }, [selectedGuild?.id]);
+    return () => { cancelled = true; window.clearTimeout(timeout); controller.abort(); };
+  }, [selectedGuild?.id, settingsRetry]);
 
   function loginDiscord() { window.location.href = `${AUTH_API}/auth/discord`; }
   function openDashboard() {
@@ -258,6 +269,9 @@ function App() {
   async function logoutDiscord() {
     try { await fetch(`${AUTH_API}/auth/logout`, { method: 'POST', credentials: 'include' }); } catch { /* estado local será limpo mesmo se a rede falhar */ }
     setSessionToken(n => n + 1); setProfile(null); setGuilds([]); setDashboardError('');
+  }
+  function retrySettings() {
+    setSettingsRetry(value => value + 1);
   }
   async function saveSetting(type, values) {
     if (!selectedGuild?.id) return;
@@ -368,7 +382,7 @@ function App() {
             <div className="config-sidebar-bottom"><button onClick={() => { setSelectedGuild(null); go('/dashboard'); }}><ArrowLeft size={16}/> Todos os servidores</button><div className="config-sidebar-user">{discordAvatar(profile) ? <img src={discordAvatar(profile)} alt=""/> : <UserRound size={18}/>}<span>{profile.global_name || profile.username}</span><button onClick={logoutDiscord} title="Sair"><LogOut size={15}/></button></div></div>
           </aside>
            <div className={`config-workspace ${(activeSetting === 'welcome' || activeSetting === 'booster') ? 'live-config-workspace' : ''}`}>
-           {activeSetting === 'welcome' && <div className="live-settings-panel"><div className="settings-live-heading"><strong>Configuração de Welcome</strong><span>Sincronizado com o VyntexBot</span></div><WelcomeSettingsEditor config={settingsData.welcome} channels={settingsData.channels} loading={settingsLoading} saving={settingsSaving} testing={settingsTesting} error={settingsError} notice={settingsNotice} onSave={values => saveSetting('welcome', values)} onTest={testWelcome} guildName={selectedGuild?.name} profile={profile}/></div>}
+           {activeSetting === 'welcome' && <div className="live-settings-panel"><div className="settings-live-heading"><strong>Configuração de Welcome</strong><span>Sincronizado com o VyntexBot</span></div><WelcomeSettingsEditor config={settingsData.welcome} channels={settingsData.channels} loading={settingsLoading} saving={settingsSaving} testing={settingsTesting} error={settingsError} notice={settingsNotice} onSave={values => saveSetting('welcome', values)} onTest={testWelcome} onRetry={retrySettings} guildName={selectedGuild?.name} profile={profile}/></div>}
            {activeSetting === 'booster' && <div className="live-settings-panel"><div className="settings-live-heading"><strong>Configuração de Booster</strong><span>Sincronizado com o VyntexBot</span></div><SettingsEditor type="booster" config={settingsData.booster} channels={settingsData.channels} loading={settingsLoading} saving={settingsSaving} error={settingsError} notice={settingsNotice} onSave={values => saveSetting('booster', values)} /></div>}
           <div className="settings-topline"><button className="btn btn-outline settings-back" onClick={() => { setSelectedGuild(null); go('/dashboard'); }}><ArrowLeft size={15}/> Voltar aos servidores</button><span className="settings-preview-label"><Clock3 size={13}/> Prévia da configuração</span></div>
           <div className="selected-server-banner">
@@ -378,7 +392,7 @@ function App() {
           </div>
           <div className="settings-layout">
             <aside className="settings-sidebar"><div className="settings-sidebar-title"><SlidersHorizontal size={15}/> CATEGORIAS</div>{settingSections.map(item => { const Icon = item.icon; return <button key={item.id} className={`settings-nav-item ${activeSetting === item.id ? 'selected' : ''}`} onClick={() => setActiveSetting(item.id)}><Icon size={17}/><span>{item.label}<small>{item.desc}</small></span><ChevronRight size={14}/></button>; })}</aside>
-            <div className="settings-main-panel">
+            {!(activeSetting === 'welcome' || activeSetting === 'booster') && <div className="settings-main-panel">
               <div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">EM BREVE</span></div>
               <div className="settings-preview-note"><Sparkles size={18}/><div><strong>Estamos preparando este sistema</strong><p>Esta é a estrutura visual inicial. Os controles serão conectados ao bot e ao banco de dados na próxima etapa.</p></div></div>
               {activeSetting === 'welcome' && <div className="settings-form-preview"><label>Canal de boas-vindas</label><div className="fake-select"><span><Hash size={15}/> selecione-um-canal</span><ChevronRight size={15}/></div><label>Mensagem de entrada</label><div className="fake-textarea">Olá, {`{usuário}`}! Seja bem-vindo(a) ao servidor {`{servidor}`}.</div><div className="settings-row"><span><strong>Enviar mensagem ao entrar</strong><small>Ativar o aviso de novos membros</small></span><span className="fake-toggle"/></div></div>}
@@ -390,7 +404,7 @@ function App() {
               {activeSetting === 'suggestions' && <div className="settings-form-preview"><label>Canal de sugestões</label><div className="fake-select"><span><Hash size={15}/> sugestoes</span><ChevronRight size={15}/></div><label>Texto do painel</label><div className="fake-textarea">Tem uma ideia para melhorar o servidor? Envie sua sugestão aqui!</div><div className="settings-row"><span><strong>Permitir votação</strong><small>Reações para apoiar ou reprovar ideias</small></span><span className="fake-toggle"/></div></div>}
               {activeSetting === 'instagram' && <div className="settings-form-preview"><label>Nome de usuário do Instagram</label><div className="fake-input">@seu_perfil</div><label>Canal para avisos</label><div className="fake-select"><span><Hash size={15}/> novidades</span><ChevronRight size={15}/></div><div className="settings-row"><span><strong>Avisar sobre novas publicações</strong><small>Enviar anúncio no canal escolhido</small></span><span className="fake-toggle"/></div></div>}
               <div className="settings-footer-note"><LockKeyhole size={14}/> As opções ainda não salvam alterações nesta versão.</div>
-            </div>
+            </div>}
           </div>
           </div>
         </section> : <><div className="guild-toolbar"><span><Server size={17}/> Servidores que você pode gerenciar <b>{guilds.length}</b></span><button className="btn btn-outline btn-refresh" onClick={() => { setSessionToken(n => n + 1); }}><RefreshCw size={14}/> Atualizar</button></div>
