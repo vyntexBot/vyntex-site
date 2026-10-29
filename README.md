@@ -38,4 +38,16 @@ npm run dev
 
 Quando o usuário seleciona **Configurar servidor**, a interface abre em `/dashboard/ID_DO_SERVIDOR`. A tela usa uma navegação própria de painel, com menu lateral de categorias e seletor para voltar à lista de servidores. O fallback de rotas do Vercel já encaminha URLs para `index.html`.
 
-A interface permanece como prévia: as opções ainda não salvam configurações no backend e a verificação de permissões/instalação deve continuar sendo validada pelo backend antes de implementar gravação.
+A interface de Welcome e Booster é conectada ao backend por cookie de sessão e permite carregar canais, editar campos e salvar configurações por servidor. O backend continua sendo responsável por sessão, permissões e validação; as demais categorias permanecem como prévias.
+
+### Variáveis do frontend
+
+Copie `.env.example` para `.env` apenas se precisar trocar os valores padrão:
+
+- `VITE_AUTH_API_URL`: URL pública do backend de autenticação.
+- `VITE_DISCORD_CLIENT_ID`: Application ID público usado apenas para montar o convite do bot.
+
+Não coloque tokens, client secrets ou credenciais MongoDB no frontend.
+## Estado atual da integração
+
+Welcome e Booster estão conectados às rotas autenticadas do backend e salvam no MongoDB compartilhado. Logs, Moderação, Tickets e demais categorias continuam como prévias visuais.
