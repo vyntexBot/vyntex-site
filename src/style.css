@@ -306,3 +306,44 @@ button:focus-visible,a:focus-visible{outline:2px solid #80a8ff;outline-offset:4p
 @keyframes vyntex-banner-sheen{0%,65%,100%{transform:translateX(-100%)}82%{transform:translateX(100%)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 @media(max-width:650px){.hero-copy,.hero-art,.config-workspace{animation-duration:.45s}.float-card{animation:none}}
+
+/* Refinamento de movimento para Início, Comandos e Loja */
+.home-motion .status-pill{animation:vyntexPulse 3s ease-in-out infinite}
+.home-motion .hero-glow{animation:vyntexGlow 7s ease-in-out infinite}
+.home-motion .float-card{animation:vyntex-float-card 5s ease-in-out infinite}
+.home-motion .card-mod{animation-delay:-2.3s}
+.home-motion .hero-bottom{animation:vyntexFadeIn .9s .3s both}
+.home-motion .feature-icon{transition:transform .35s cubic-bezier(.2,.75,.25,1),box-shadow .35s ease,color .35s ease}
+.home-motion .feature-card:hover .feature-icon{transform:translateY(-3px) rotate(-4deg);box-shadow:0 0 24px #2869ff25;color:#b9d0ff}
+.home-motion .ticket-preview{transition:transform .35s ease,border-color .35s ease}
+.home-motion .feature-large:hover .ticket-preview{transform:translateY(-4px);border-color:#4269c6}
+.page-motion .eyebrow{animation:vyntexFadeUp .45s both}
+.page-motion h1{animation:vyntexFadeUp .55s .04s both}
+.page-motion .sublead{animation:vyntexFadeUp .55s .1s both}
+.commands-page .searchbar{transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease}
+.commands-page .searchbar:focus-within{border-color:#4779ff;box-shadow:0 0 0 4px #2869ff18,0 12px 34px #0002;transform:translateY(-1px)}
+.commands-page .command-card{position:relative;overflow:hidden;animation:vyntexFadeUp .45s both;animation-delay:calc(min(var(--card-index, 0), 8) * 35ms)}
+.commands-page .command-card::before,.store-page .price-card::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(115deg,transparent 15%,#7195ff0c 48%,transparent 75%);transform:translateX(-80%);transition:opacity .3s ease}
+.commands-page .command-card:hover::before,.store-page .price-card:hover::before{opacity:1;animation:vyntex-banner-sheen 1.1s ease}
+.commands-page .command-card code{transition:color .25s ease,background .25s ease,box-shadow .25s ease}
+.commands-page .command-card:hover code{color:#dbe7ff;background:#24478a;box-shadow:0 0 20px #2869ff1c}
+.store-page .pricing-grid{perspective:1000px}
+.store-page .price-card{position:relative;overflow:hidden;animation:vyntexFadeUp .6s both}
+.store-page .price-card:first-child{animation-delay:.08s}
+.store-page .price-card:nth-child(2){animation-delay:.16s}
+.store-page .plan-name{transition:letter-spacing .25s ease,color .25s ease}
+.store-page .price-card:hover .plan-name{letter-spacing:1.8px;color:#c3d6ff}
+.store-page .price-card.featured{box-shadow:0 0 0 1px #2869ff12,0 18px 50px #0a1c4920}
+.store-page .price-card.featured:hover{box-shadow:0 20px 55px #164bba26,0 0 28px #2869ff12}
+.faq-intro{max-width:600px;color:#989db2;line-height:1.8;margin:-10px 0 24px}
+.faq-item{transform-origin:top center}
+.faq-item.open{border-bottom-color:#3b5fa6}
+.faq-item.open>button{color:#e7edff}
+.faq-item.open>button span:last-child{color:#b8ceff;border-color:#3558a4;background:#18284b}
+.guild-card{animation:vyntexFadeUp .4s both;animation-delay:calc(min(var(--guild-index, 0), 12) * 25ms)}
+.guild-toolbar .btn-refresh:active svg{transform:rotate(90deg)}
+.guild-toolbar .btn-refresh svg{transition:transform .3s ease}
+@media(prefers-reduced-motion:reduce){
+ .home-motion .float-card,.home-motion .status-pill,.home-motion .hero-glow,.config-side-link.active,.pulse{animation:none!important}
+ .commands-page .command-card,.store-page .price-card,.guild-card{animation:none!important}
+}

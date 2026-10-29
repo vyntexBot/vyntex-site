@@ -44,8 +44,11 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   window.onpopstate = () => setRoute(window.location.pathname);
+  const dashboardRouteActive = /^\/dashboard(?:\/[^/]+)?\/?$/.test(route) || route.replace(/\/+$/, '') === '/panel';
 
   useEffect(() => {
+    // No dashboard, a consulta combinada abaixo já carrega o perfil e os servidores.
+    if (/^\/dashboard(?:\/[^/]+)?\/?$/.test(window.location.pathname) || window.location.pathname === '/panel') return;
     let cancelled = false;
     fetch(`${AUTH_API}/api/me`, { credentials: 'include' })
       .then(async r => { if (!r.ok) throw new Error('Sem sessão'); return r.json(); })
@@ -63,10 +66,19 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!(/^\/dashboard(?:\/[^/]+)?\/?$/.test(route) || route.replace(/\/+$/, '') === '/panel')) return;
+    if (!dashboardRouteActive) return;
     let cancelled = false;
-    setDashboardLoading(true);
-    // As duas consultas usam a mesma sessão; executá-las em paralelo evita uma ida extra ao backend.
+    const cacheKey = 'vyntex-dashboard-cache-v1';
+    // Mostra os últimos dados desta sessão imediatamente enquanto atualiza a lista em segundo plano.
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
+      if (cached?.profile && Array.isArray(cached.guilds)) {
+        setProfile(cached.profile);
+        setGuilds(cached.guilds);
+        setDashboardLoading(false);
+      } else setDashboardLoading(true);
+    } catch { setDashboardLoading(true); }
+    // Perfil e servidores são pedidos em paralelo; sem duplicar a chamada de perfil no dashboard.
     Promise.all([
       fetch(`${AUTH_API}/api/me`, { credentials: 'include' }),
       fetch(`${AUTH_API}/api/guilds`, { credentials: 'include' }),
@@ -75,12 +87,22 @@ function App() {
         const [me, guildData] = await Promise.all([meResponse.json(), guildResponse.json()]);
         if (!meResponse.ok) throw new Error(me.error || 'Faça login com o Discord para continuar.');
         if (!guildResponse.ok) throw new Error(guildData.error || 'Não foi possível carregar os servidores.');
-        if (!cancelled) { setProfile(me); setGuilds(guildData.guilds || []); setDashboardError(''); }
+        if (!cancelled) {
+          const nextGuilds = guildData.guilds || [];
+          setProfile(me); setGuilds(nextGuilds); setDashboardError('');
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({ profile: me, guilds: nextGuilds, savedAt: Date.now() })); } catch { /* cache opcional */ }
+        }
       })
-      .catch(err => { if (!cancelled) { setProfile(null); setGuilds([]); if (!/Faça login com o Discord/i.test(err.message)) setDashboardError(err.message || 'Erro ao carregar o painel.'); } })
+      .catch(err => { if (!cancelled) {
+        if (/Faça login com o Discord|Sem sessão|Unauthorized|401/i.test(err.message)) {
+          setProfile(null); setGuilds([]);
+          try { sessionStorage.removeItem(cacheKey); } catch { /* cache opcional */ }
+        }
+        if (!/Faça login com o Discord/i.test(err.message)) setDashboardError(err.message || 'Erro ao atualizar o painel.');
+      } })
       .finally(() => { if (!cancelled) setDashboardLoading(false); });
     return () => { cancelled = true; };
-  }, [route, sessionToken]);
+  }, [dashboardRouteActive, sessionToken]);
 
   useEffect(() => {
     const currentPage = route.replace(/\/+$/, '') || '/';
@@ -216,7 +238,7 @@ function App() {
           </div>
         </section> : <><div className="guild-toolbar"><span><Server size={17}/> Servidores que você pode gerenciar <b>{guilds.length}</b></span><button className="btn btn-outline btn-refresh" onClick={() => { setSessionToken(n => n + 1); }}><RefreshCw size={14}/> Atualizar</button></div>
         {dashboardError && <div className="dashboard-alert"><ShieldCheck size={17}/>{dashboardError}</div>}
-        {dashboardLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando seus servidores...</div> : guilds.length ? <div className="guild-grid">{guilds.map(guild => <article className="guild-card" key={guild.id}>
+        {dashboardLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando seus servidores...</div> : guilds.length ? <div className="guild-grid">{guilds.map(guild => <article className="guild-card" key={guild.id} style={{"--guild-index": guilds.indexOf(guild)}}>
           <div className="guild-card-top">{guildIcon(guild) ? <img className="guild-icon" src={guild.icon} alt=""/> : <div className="guild-icon guild-icon-fallback"><Server size={24}/></div>}<div className="guild-title"><h3>{guild.name}</h3><small>{guild.owner ? 'Você é o dono' : 'Você pode gerenciar'}</small></div></div>
           <div className="guild-card-bottom">{guild.botInstalled ? <button className="btn btn-primary guild-action" onClick={() => { setSelectedGuild(guild); setActiveSetting('welcome'); go(`/dashboard/${guild.id}`); }}><Settings2 size={16}/> Configurar servidor</button> : <button className="btn btn-outline guild-action" onClick={() => inviteBotToGuild(guild.id)}><Bot size={16}/> Adicionar ao servidor <ExternalLink size={14}/></button>}</div>
           {guild.botInstalled && <span className="guild-installed"><Check size={13}/> Vyntex conectado</span>}
@@ -224,15 +246,15 @@ function App() {
         <p className="footnote">Só aparecem servidores nos quais sua conta tem permissão de gerenciamento.</p></> }
       </section>}
     </main> :
-    isCommands ? <main className="subpage commands-page">
+    isCommands ? <main className="subpage commands-page page-motion">
       <div className="eyebrow"><Command size={14}/> CENTRAL DE COMANDOS</div>
       <h1>Comandos do <span>Vyntex</span></h1>
       <p className="sublead">Tudo para organizar seu servidor e facilitar o trabalho da sua equipe.</p>
       <div className="searchbar"><Command size={18}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar comando ou recurso..."/><kbd>⌕</kbd></div>
-      <div className="command-grid">{visibleCommands.map(c=><article className="command-card" key={c.name}><div><code>{c.name}</code><span className="command-group">{c.group}</span></div><p>{c.desc}</p></article>)}</div>
+      <div className="command-grid">{visibleCommands.map(c=><article className="command-card" key={c.name} style={{"--card-index": visibleCommands.indexOf(c)}}><div><code>{c.name}</code><span className="command-group">{c.group}</span></div><p>{c.desc}</p></article>)}</div>
       <p className="footnote">Lista inicial de exemplo — os comandos finais dependem da implementação do bot.</p>
     </main> :
-    isStore ? <main className="subpage store-page">
+    isStore ? <main className="subpage store-page page-motion">
       <div className="eyebrow"><Sparkles size={14}/> PLANOS VYNTEX</div>
       <h1>Escolha seu <span>plano.</span></h1>
       <p className="sublead">Comece gratuitamente e evolua quando seu servidor precisar de mais.</p>
@@ -250,7 +272,7 @@ function App() {
       <p className="footnote">Os perfis da equipe poderão ser adicionados aqui depois.</p>
     </main> :
     <main>
-      <section className="hero">
+      <section className="hero home-motion">
         <div className="hero-glow"></div><div className="hero-grid"></div>
         <div className="hero-copy">
           <div className="status-pill"><span className="pulse"></span> SEU SERVIDOR, EM OUTRO NÍVEL</div>
@@ -286,7 +308,16 @@ function App() {
 
       <section className="cta-band"><div className="cta-symbol"><img src="/vyntex.png" alt=""/></div><div><div className="eyebrow">PRONTO PARA COMEÇAR?</div><h2>Leve o Vyntex para seu servidor.</h2><p>Adicione o bot e prepare sua comunidade para o próximo nível.</p></div><a className="btn btn-light" href={botInvite}>Adicionar ao Discord <ArrowUpRight size={16}/></a></section>
 
-      <section className="faq section-wrap"><div className="eyebrow">DÚVIDAS FREQUENTES</div><h2>Quer saber mais?</h2>{[['O que é o Vyntex?','Um bot para ajudar com tickets, moderação e organização de servidores Discord.'],['Como adiciono o bot?','Use o botão “Adicionar ao Discord”. O link definitivo será configurado com o ID oficial do bot.'],['Como abro o painel?','Clique em “Abrir o painel” e autorize a conexão com o Discord para acessar seu perfil e seus servidores.']].map(([q,a],i)=><div className={`faq-item ${faqOpen===i?'open':''}`} key={q}><button onClick={()=>setFaqOpen(faqOpen===i?-1:i)}><span>{q}</span><span>{faqOpen===i?'−':'+'}</span></button>{faqOpen===i&&<p>{a}</p>}</div>)}</section>
+      <section className="faq section-wrap"><div className="eyebrow"><Sparkles size={14}/> GUIA RÁPIDO</div><h2>Comece com o <span>Vyntex.</span></h2><p className="faq-intro">Tire suas dúvidas e deixe seu servidor pronto para receber a comunidade.</p>{[
+        ['O que é o Vyntex?','O Vyntex é um bot para Discord pensado para facilitar a rotina da sua comunidade. A proposta reúne atendimento por tickets, ferramentas de moderação, registros e recursos de organização em um só lugar. Os recursos marcados como em preparação serão liberados conforme cada sistema for implementado.'],
+        ['Como adiciono o bot ao meu servidor?','Clique em “Adicionar ao Discord”, escolha a comunidade na tela oficial do Discord e confira as permissões solicitadas. Você precisa ser dono do servidor ou ter permissão para gerenciá-lo. Depois, confirme a autorização e volte ao site da Vyntex.'],
+        ['Como abro o painel de controle?','Clique em “Abrir painel” ou em “Dashboard” no menu. Você será encaminhado ao Discord para autorizar o acesso à sua conta. Após a autorização, o painel mostra os servidores que sua conta pode gerenciar.'],
+        ['Por que meu servidor não aparece na lista?','Confira se entrou na conta Discord correta e se você é o proprietário do servidor ou tem permissão para gerenciá-lo. Use o botão “Atualizar” no painel. Se o Vyntex ainda não estiver instalado, o cartão oferecerá a opção de adicioná-lo.'],
+        ['Como configuro um servidor?','No Dashboard, localize o servidor em que o Vyntex já está instalado e clique em “Configurar servidor”. Você entrará na área específica daquele servidor. Nesta versão, as telas de configuração ainda são uma prévia e não salvam alterações.'],
+        ['Preciso autorizar o Discord toda vez?','Enquanto sua sessão de login continuar válida, o site tenta reconhecer sua conexão automaticamente. Se a sessão expirar, você sair da conta ou limpar os dados do navegador, será necessário autorizar novamente pelo Discord.'],
+        ['O Vyntex é gratuito?','O plano Free está apresentado como opção inicial. Recursos e condições de planos pagos ainda serão definidos antes de qualquer lançamento do Premium.'],
+        ['Onde consigo ajuda se algo não funcionar?','Tente atualizar a página, confira se o Vyntex está instalado e verifique se sua conta tem as permissões necessárias. Se o problema continuar, envie à equipe uma captura de tela do erro sem compartilhar senhas, códigos de autorização ou tokens.']
+      ].map(([q,a],i)=><div className={`faq-item ${faqOpen===i?'open':''}`} key={q}><button onClick={()=>setFaqOpen(faqOpen===i?-1:i)}><span>{q}</span><span>{faqOpen===i?'−':'+'}</span></button>{faqOpen===i&&<p>{a}</p>}</div>)}</section>
     </main>}
 
     <footer className="footer"><button className="brand footer-brand" onClick={()=>go('/')}><img src="/vyntex.png" alt=""/><span>Vyntex</span></button><span>© 2026 Vyntex. Feito para comunidades Discord.</span><div><button onClick={()=>go('/commands')}>Comandos</button><button onClick={()=>go('/store')}>Loja</button><button onClick={openDashboard}>Painel</button></div></footer>
