@@ -290,7 +290,7 @@ function App() {
     return () => { cancelled = true; window.clearTimeout(timeout); controller.abort(); };
   }, [selectedGuild?.id, settingsRetry]);
 
-  function loginDiscord() { window.location.href = `${AUTH_API}/auth/discord`; }
+  function loginDiscord(force = false) { window.location.href = `${AUTH_API}/auth/discord${force ? '?force=1' : ''}`; }
   function openDashboard() {
     setMobileOpen(false);
     loginDiscord();
@@ -411,7 +411,7 @@ function App() {
             <div className="config-sidebar-bottom"><button onClick={() => { setSelectedGuild(null); go('/dashboard'); }}><ArrowLeft size={16}/> Todos os servidores</button><div className="config-sidebar-user">{discordAvatar(profile) ? <img src={discordAvatar(profile)} alt=""/> : <UserRound size={18}/>}<span>{profile.global_name || profile.username}</span><button onClick={logoutDiscord} title="Sair"><LogOut size={15}/></button></div></div>
           </aside>
            <div className={`config-workspace ${(activeSetting === 'welcome' || activeSetting === 'booster') ? 'live-config-workspace' : ''}`}>
-           {activeSetting === 'welcome' && <div className="live-settings-panel live-settings-panel-v2"><div className="settings-live-heading"><strong>Configuração de Welcome</strong><span>Sincronizado com o VyntexBot</span></div><WelcomeSettingsEditorV2 config={settingsData.welcome} channels={settingsData.channels} loading={settingsLoading} saving={settingsSaving} testing={settingsTesting} error={settingsError} notice={settingsNotice} onSave={values => saveSetting(activeSetting, values)} onTest={testWelcome} onRetry={retrySettings} onLogin={loginDiscord} guildName={selectedGuild?.name} profile={profile} botInstalled={selectedGuild?.botInstalled}/></div>}
+           {activeSetting === 'welcome' && <div className="live-settings-panel live-settings-panel-v2"><div className="settings-live-heading"><strong>Configuração de Welcome</strong><span>Sincronizado com o VyntexBot</span></div><WelcomeSettingsEditorV2 config={settingsData.welcome} channels={settingsData.channels} loading={settingsLoading} saving={settingsSaving} testing={settingsTesting} error={settingsError} notice={settingsNotice} onSave={values => saveSetting(activeSetting, values)} onTest={testWelcome} onRetry={retrySettings} onLogin={() => loginDiscord(true)} guildName={selectedGuild?.name} profile={profile} botInstalled={selectedGuild?.botInstalled}/></div>}
            {activeSetting === 'booster' && <div className="live-settings-panel"><div className="settings-live-heading"><strong>Configuração de Booster</strong><span>Sincronizado com o VyntexBot</span></div><SettingsEditor type="booster" config={settingsData.booster} channels={settingsData.channels} loading={settingsLoading} saving={settingsSaving} error={settingsError} notice={settingsNotice} onSave={values => saveSetting('booster', values)} /></div>}
           <div className="settings-topline"><button className="btn btn-outline settings-back" onClick={() => { setSelectedGuild(null); go('/dashboard'); }}><ArrowLeft size={15}/> Voltar aos servidores</button><span className="settings-preview-label"><Clock3 size={13}/> Prévia da configuração</span></div>
           <div className="selected-server-banner">
