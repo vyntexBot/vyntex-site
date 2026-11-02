@@ -1,166 +1,43 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Menu, X, ChevronRight, ShieldCheck, Ticket, Zap, Users, MessageSquare,
   Settings2, Check, ArrowUpRight, Command, LockKeyhole, Sparkles, Crown,
   Activity, Headphones, Bot, LayoutDashboard, Gamepad2, Server, ExternalLink, RefreshCw, LogOut, UserRound,
-  ArrowLeft, BellRing, ClipboardList, ShieldAlert, UsersRound, MessageCircle, Instagram, Lightbulb, Hash, SlidersHorizontal, Clock3, Search, Send, RotateCcw, Copy, Eye
+  ArrowLeft, BellRing, ClipboardList, ShieldAlert, UsersRound, MessageCircle, Instagram, Lightbulb, Hash, SlidersHorizontal, Clock3
 } from 'lucide-react';
 import './style.css';
 
-const botClientId = import.meta.env.VITE_DISCORD_CLIENT_ID || '1443238280060473507';
+const botClientId = '1443238280060473507';
 const botInvite = `https://discord.com/oauth2/authorize?client_id=${botClientId}&permissions=8&scope=bot%20applications.commands`;
-const AUTH_API = import.meta.env.VITE_AUTH_API_URL || 'https://vyntex-auth-backend.onrender.com';
+const AUTH_API = 'https://vyntex-auth-backend.onrender.com';
 function discordAvatar(user) {
   if (!user?.id || !user?.avatar) return null;
   const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
   return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
 }
 function guildIcon(guild) { return guild.icon || null; }
-
-function SettingsEditor({ type, config, channels, loading, saving, error, notice, onSave }) {
-  const [form, setForm] = useState(config || {});
-  useEffect(() => setForm(config || {}), [config, type]);
-  const update = (key, value) => setForm(current => ({ ...current, [key]: value }));
-  if (loading || !config) return <div className="guild-empty settings-loading"><RefreshCw className="spin"/> Carregando configurações...</div>;
-  const label = type === 'welcome' ? 'Welcome' : 'Booster';
-  return <form className="settings-form-preview live-settings-form" onSubmit={event => { event.preventDefault(); onSave(form); }}>
-    {error && <div className="dashboard-alert settings-form-alert"><ShieldAlert size={17}/>{error}</div>}
-    {notice && <div className="settings-success"><Check size={16}/>{notice}</div>}
-    <label htmlFor={`${type}-channel`}>Canal de {type === 'welcome' ? 'boas-vindas' : 'notificações de Booster'}</label>
-    <select id={`${type}-channel`} className="settings-select" value={form.channelId || ''} onChange={event => update('channelId', event.target.value || null)}>
-      <option value="">Selecione um canal</option>
-      {channels.map(channel => <option value={channel.id} key={channel.id}># {channel.name}</option>)}
-    </select>
-    <label htmlFor={`${type}-content`}>Mensagem normal</label>
-    <textarea id={`${type}-content`} className="settings-control settings-textarea" value={form.content || ''} maxLength={2000} onChange={event => update('content', event.target.value)} />
-    <div className="settings-check-row"><label><input type="checkbox" checked={Boolean(form.enabled)} onChange={event => update('enabled', event.target.checked)}/> Ativar sistema de {label}</label><small>O bot aplica esta alteração sem reiniciar.</small></div>
-    <div className="settings-check-row"><label><input type="checkbox" checked={Boolean(form.useEmbed)} onChange={event => update('useEmbed', event.target.checked)}/> Enviar também um embed</label></div>
-    {form.useEmbed && <>
-      <label htmlFor={`${type}-title`}>Título do embed</label>
-      <input id={`${type}-title`} className="settings-control" value={form.title || ''} maxLength={256} onChange={event => update('title', event.target.value)} />
-      <label htmlFor={`${type}-description`}>Descrição do embed</label>
-      <textarea id={`${type}-description`} className="settings-control settings-textarea" value={form.description || ''} maxLength={4096} onChange={event => update('description', event.target.value)} />
-      <div className="settings-inline-fields"><div><label htmlFor={`${type}-color`}>Cor</label><input id={`${type}-color`} className="settings-control" value={form.color || ''} placeholder="#5865F2" onChange={event => update('color', event.target.value)} /></div><div><label htmlFor={`${type}-image`}>Imagem/Banner</label><input id={`${type}-image`} className="settings-control" value={form.imageUrl || ''} placeholder="https://..." onChange={event => update('imageUrl', event.target.value || null)} /></div></div>
-      <label htmlFor={`${type}-footer`}>Rodapé (opcional)</label>
-      <input id={`${type}-footer`} className="settings-control" value={form.footer || ''} maxLength={2048} onChange={event => update('footer', event.target.value || null)} />
-    </>}
-    <div className="settings-variable-help">Variáveis aceitas: <code>{'{user}'}</code> <code>{'{username}'}</code> <code>{'{server}'}</code>{type === 'welcome' && <> <code>{'{memberCount}'}</code></>}</div>
-    <button className="btn btn-primary settings-save-button" type="submit" disabled={saving}>{saving ? 'Salvando...' : `Salvar ${label}`}</button>
-  </form>;
-}
-
-const WELCOME_VARIABLES = [
-  ['{user}', 'Menciona o membro que entrou.'],
-  ['{username}', 'Nome de utilizador do membro.'],
-  ['{server}', 'Nome do servidor.'],
-  ['{memberCount}', 'Quantidade atual de membros.'],
-];
-const WELCOME_TEMPLATES = [
-  { id: 'classic', name: 'Clássico', description: 'Simples e amigável.', values: { useEmbed: false, content: 'Bem-vindo(a), {user}! Aproveite o servidor **{server}**.' } },
-  { id: 'modern', name: 'Moderno', description: 'Embed limpa e elegante.', values: { useEmbed: true, content: '', title: 'Bem-vindo à comunidade!', description: 'Olá {user}, é ótimo ter você no **{server}**.', color: '#5865F2', footer: 'Membro #{memberCount}' } },
-  { id: 'community', name: 'Comunidade', description: 'Acolhimento caloroso.', values: { useEmbed: true, content: 'Dê as boas-vindas a {username}!', title: 'Uma nova pessoa chegou', description: 'Junte-se à nossa comunidade, {user}. Agora somos {memberCount} membros!', color: '#57F287', footer: 'Seja bem-vindo(a)!' } },
-  { id: 'minimal', name: 'Minimalista', description: 'Curto e discreto.', values: { useEmbed: false, content: 'Olá, {username}! 👋' } },
-  { id: 'gaming', name: 'Gaming', description: 'Energia gamer moderada.', values: { useEmbed: true, content: '', title: '🎮 Novo jogador entrou!', description: '{user} chegou ao lobby de **{server}**. Prepare-se!', color: '#EB459E', footer: 'Boa partida!' } },
-  { id: 'professional', name: 'Profissional', description: 'Organizado e discreto.', values: { useEmbed: true, content: '', title: 'Bem-vindo(a)', description: '{user}, agradecemos a sua entrada em **{server}**.', color: '#2B2D31', footer: 'Equipe {server}' } },
-  { id: 'custom', name: 'Personalizado', description: 'Começar em branco.', values: { useEmbed: true, content: '', title: '', description: '', color: '#5865F2', footer: '' } },
-];
-
-function renderWelcomePreview(value, serverName) {
-  return String(value || '').replaceAll('{user}', '@MembroExemplo').replaceAll('{username}', 'MembroExemplo').replaceAll('{server}', serverName || 'Seu servidor').replaceAll('{memberCount}', '128');
-}
-
-function WelcomePreview({ form, guildName, profile }) {
-  const avatar = discordAvatar(profile);
-  const text = renderWelcomePreview(form.content, guildName);
-  return <div className="welcome-preview" aria-label="Pré-visualização da mensagem de boas-vindas">
-    <div className="welcome-preview-heading"><Eye size={16}/> Pré-visualização ao vivo</div>
-    <div className="discord-preview-message">
-      <div className="discord-preview-avatar">{avatar ? <img src={avatar} alt=""/> : <Bot size={22}/>}</div>
-      <div className="discord-preview-body"><div className="discord-preview-author">VyntexBot <span>BOT</span> <small>Hoje às 12:00</small></div>
-        {!form.useEmbed && <div className="discord-preview-content">{text || <em>A sua mensagem aparecerá aqui.</em>}</div>}
-        {form.useEmbed && <div className="discord-preview-embed" style={{ borderLeftColor: /^#[0-9a-f]{6}$/i.test(form.color || '') ? form.color : '#5865F2' }}>
-          {form.showMemberInfo !== false && <div className="discord-preview-embed-author"><div className="preview-member-avatar">M</div><strong>MembroExemplo</strong></div>}
-          {text && <div className="discord-preview-content">{text}</div>}
-          {form.title && <strong className="discord-preview-title">{renderWelcomePreview(form.title, guildName)}</strong>}
-          {form.description && <div className="discord-preview-description">{renderWelcomePreview(form.description, guildName)}</div>}
-          {form.imageUrl && /^https?:\/\//i.test(form.imageUrl) && <img className="discord-preview-image" src={form.imageUrl} alt="Prévia da imagem configurada"/>}
-          {form.footer && <small className="discord-preview-footer">{renderWelcomePreview(form.footer, guildName)}</small>}
-        </div>}
-      </div>
-    </div>
-  </div>;
-}
-
-function explainSettingsError(error) {
-  if (!error) return '';
-  if (/abort|timeout|demorou/i.test(error)) return 'A API demorou para responder. Verifique se o backend está disponível e tente novamente.';
-  if (/401|sess[aã]o|login/i.test(error)) return 'A sua sessão expirou. Entre novamente com o Discord para continuar.';
-  if (/consultar os servidores|servidores do Discord/i.test(error)) return 'O backend não conseguiu consultar a sua conta Discord. Tente novamente ou entre outra vez com o Discord.';
-  return error;
-}
-
-function WelcomeSettingsEditor({ config, channels, loading, saving, testing, error, notice, onSave, onTest, onRetry, guildName, profile }) {
-  const [form, setForm] = useState(config || {});
-  const [channelSearch, setChannelSearch] = useState('');
-  const [lastField, setLastField] = useState('content');
-  const [templateNotice, setTemplateNotice] = useState('');
-  const contentRef = useRef(null);
-  useEffect(() => setForm(config || {}), [config]);
-  const update = (key, value) => setForm(current => ({ ...current, [key]: value }));
-  const filteredChannels = channels.filter(channel => channel.name.toLowerCase().includes(channelSearch.toLowerCase()));
-  const selectedChannel = channels.find(channel => channel.id === form.channelId);
-  const focusField = (key, ref) => { setLastField(key); if (ref) contentRef.current = ref; };
-  const insertVariable = token => update(lastField, `${form[lastField] || ''}${token}`);
-  const applyTemplate = template => { setForm(current => ({ ...current, ...template.values })); setTemplateNotice(`${template.name} aplicado. Revise a prévia e salve quando estiver pronto.`); };
-  if (error) return <div className="settings-load-error"><ShieldAlert size={20}/><div><strong>Não foi possível carregar o Welcome</strong><p>{explainSettingsError(error)}</p><button type="button" className="btn btn-outline" onClick={onRetry}><RefreshCw size={15}/> Tentar novamente</button></div></div>;
-  if (loading || !config) return <div className="guild-empty settings-loading"><RefreshCw className="spin"/> Carregando configurações...</div>;
-  return <div className="welcome-builder">
-    {error && <div className="dashboard-alert settings-form-alert"><ShieldAlert size={17}/>{error}</div>}
-    {notice && <div className="settings-success"><Check size={16}/>{notice}</div>}
-    {templateNotice && <div className="welcome-draft-note"><Sparkles size={15}/>{templateNotice}</div>}
-    <section className="welcome-builder-section"><div className="welcome-section-title"><Sparkles size={18}/><div><strong>Comece com um template</strong><small>Escolha uma base. Nada é salvo até confirmar.</small></div></div><div className="welcome-template-grid">{WELCOME_TEMPLATES.map(template => <button type="button" key={template.id} className="welcome-template-card" onClick={() => applyTemplate(template)}><div className={`welcome-template-mini ${template.values.useEmbed ? 'mini-embed' : ''}`}><b>{template.values.title || template.values.content || 'Mensagem personalizada'}</b><span>{template.values.description || template.description}</span></div><strong>{template.name}</strong><small>{template.description}</small></button>)}</div></section>
-    <div className="welcome-builder-columns"><div className="welcome-form-column">
-      <section className="welcome-builder-section"><div className="welcome-section-title"><Hash size={18}/><div><strong>Canal de entrada</strong><small>{selectedChannel ? `Selecionado: #${selectedChannel.name}` : 'Escolha um canal de texto real do servidor.'}</small></div></div><div className="welcome-channel-search"><Search size={16}/><input aria-label="Pesquisar canais" placeholder="Pesquisar canais" value={channelSearch} onChange={event => setChannelSearch(event.target.value)}/></div><select className="settings-select" value={form.channelId || ''} onChange={event => update('channelId', event.target.value || null)} aria-label="Canal de boas-vindas"><option value="">Selecione um canal</option>{filteredChannels.map(channel => <option value={channel.id} key={channel.id}># {channel.name}</option>)}</select>{!channels.length && <p className="settings-muted">Nenhum canal de texto disponível para o bot.</p>}</section>
-      <section className="welcome-builder-section"><div className="welcome-section-title"><SlidersHorizontal size={18}/><div><strong>Formato e mensagem</strong><small>Alterne entre mensagem normal e embed sem perder os campos.</small></div></div><div className="welcome-format-toggle"><button type="button" className={!form.useEmbed ? 'active' : ''} onClick={() => update('useEmbed', false)}>Mensagem normal</button><button type="button" className={form.useEmbed ? 'active' : ''} onClick={() => update('useEmbed', true)}>Embed</button></div><label className="settings-check-row"><span><input type="checkbox" checked={Boolean(form.enabled)} onChange={event => update('enabled', event.target.checked)}/> Ativar boas-vindas</span><small>Aplicado sem reiniciar o bot.</small></label><label htmlFor="welcome-content">Conteúdo adicional</label><textarea id="welcome-content" ref={contentRef} className="settings-control settings-textarea" value={form.content || ''} maxLength={2000} onFocus={event => focusField('content', event.target)} onChange={event => update('content', event.target.value)} placeholder="Bem-vindo(a), {user}!"/>{form.useEmbed && <><label htmlFor="welcome-title">Título da embed</label><input id="welcome-title" className="settings-control" value={form.title || ''} maxLength={256} onFocus={() => setLastField('title')} onChange={event => update('title', event.target.value)}/><label htmlFor="welcome-description">Descrição</label><textarea id="welcome-description" className="settings-control settings-textarea" value={form.description || ''} maxLength={4096} onFocus={() => setLastField('description')} onChange={event => update('description', event.target.value)}/><div className="settings-inline-fields"><div><label htmlFor="welcome-color">Cor</label><div className="welcome-color-field"><input type="color" value={/^#[0-9a-f]{6}$/i.test(form.color || '') ? form.color : '#5865F2'} onChange={event => update('color', event.target.value)}/><input id="welcome-color" className="settings-control" value={form.color || ''} maxLength={7} onChange={event => update('color', event.target.value)}/></div></div><div><label htmlFor="welcome-image">Imagem ou banner</label><input id="welcome-image" className="settings-control" value={form.imageUrl || ''} maxLength={2048} placeholder="https://..." onChange={event => update('imageUrl', event.target.value || null)}/></div></div><label htmlFor="welcome-footer">Rodapé</label><input id="welcome-footer" className="settings-control" value={form.footer || ''} maxLength={2048} onFocus={() => setLastField('footer')} onChange={event => update('footer', event.target.value || null)}/><label className="settings-check-row"><span><input type="checkbox" checked={form.showMemberInfo !== false} onChange={event => update('showMemberInfo', event.target.checked)}/> Mostrar avatar e nome do membro</span></label></>}</section>
-      <section className="welcome-builder-section"><div className="welcome-section-title"><Command size={18}/><div><strong>Variáveis dinâmicas</strong><small>Clique para inserir no campo que está selecionado.</small></div></div><div className="welcome-variable-list">{WELCOME_VARIABLES.map(([token, description]) => <div key={token} className="welcome-variable"><button type="button" onClick={() => insertVariable(token)}><span>{token}</span><Copy size={14}/></button><small>{description}</small></div>)}</div></section>
-      <div className="welcome-actions"><button type="button" className="btn btn-outline" onClick={() => { if (window.confirm('Descartar todas as alterações não salvas?')) setForm(config); }}><RotateCcw size={16}/> Restaurar</button><button type="button" className="btn btn-outline" onClick={() => document.querySelector('.welcome-preview')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}><Eye size={16}/> Pré-visualizar</button><button type="button" className="btn btn-outline" disabled={testing || !form.channelId} onClick={() => onTest(form)}><Send size={16}/> {testing ? 'Enviando...' : 'Enviar teste'}</button><button type="button" className="btn btn-primary settings-save-button" disabled={saving} onClick={() => onSave(form)}>{saving ? 'Salvando...' : 'Salvar alterações'}</button></div>
-    </div><WelcomePreview form={form} guildName={guildName} profile={profile}/></div>
-  </div>;
-}
-function WelcomeSettingsEditorV2({ config, channels, loading, saving, testing, error, notice, onSave, onTest, onRetry, onLogin, guildName, profile, botInstalled }) {
-  const [form, setForm] = useState(config || {});
-  const [channelSearch, setChannelSearch] = useState('');
-  const [activeField, setActiveField] = useState('content');
-  const [templateNotice, setTemplateNotice] = useState('');
-  useEffect(() => setForm(config || {}), [config]);
-  const update = (key, value) => setForm(current => ({ ...current, [key]: value }));
-  const dirty = Boolean(config) && JSON.stringify(form) !== JSON.stringify(config);
-  const filteredChannels = channels.filter(channel => channel.name.toLowerCase().includes(channelSearch.toLowerCase()));
-  const selectedChannel = channels.find(channel => channel.id === form.channelId);
-  const applyTemplate = template => { setForm(current => ({ ...current, ...template.values })); setTemplateNotice(`${template.name} selecionado. Revise e salve quando estiver pronto.`); };
-  const insertVariable = token => update(activeField, `${form[activeField] || ''}${token}`);
-  const reset = () => { if (dirty && window.confirm('Descartar as alterações não salvas e restaurar a última configuração?')) { setForm(config || {}); setTemplateNotice(''); } };
-  if (error) return <div className="settings-load-error"><ShieldAlert size={20}/><div><strong>Não foi possível carregar o Welcome</strong><p>{explainSettingsError(error)}</p><div className="settings-load-actions"><button type="button" className="btn btn-outline" onClick={onRetry}><RefreshCw size={15}/> Tentar novamente</button><button type="button" className="btn btn-primary" onClick={onLogin}>Entrar novamente</button></div></div></div>;
-  if (loading || !config) return <div className="guild-empty settings-loading"><RefreshCw className="spin"/> Carregando configurações...</div>;
-  return <div className="welcome-v2">
-    <div className="welcome-stepper" aria-label="Etapas da configuração"><div className="active"><span>1</span><b>Entrada</b></div><i></i><div><span>2</span><b>Template</b></div><i></i><div><span>3</span><b>Mensagem</b></div><i></i><div><span>4</span><b>Prévia e teste</b></div></div>
-    {notice && <div className="settings-success"><Check size={16}/>{notice}</div>}
-    {templateNotice && <div className="welcome-draft-note"><Sparkles size={15}/>{templateNotice}</div>}
-    <section className="welcome-stage"><div className="welcome-stage-heading"><span className="welcome-stage-number">01</span><div><p>ETAPA 1</p><h3>Configurações de entrada</h3><small>Defina onde e quando o VyntexBot deve dar as boas-vindas.</small></div></div><div className="welcome-entry-grid"><div className="welcome-switch-card"><div><strong>Ativar boas-vindas</strong><small>O bot aplicará a configuração sem reiniciar.</small></div><button type="button" className={`welcome-switch ${form.enabled ? 'on' : ''}`} aria-pressed={Boolean(form.enabled)} onClick={() => update('enabled', !form.enabled)}><span></span></button></div><div className="welcome-channel-card"><div className="welcome-card-heading"><Hash size={17}/><div><strong>Canal de entrada</strong><small>{selectedChannel ? <>Canal atual: <b>#{selectedChannel.name}</b></> : 'Escolha um canal de texto do servidor.'}</small></div></div><div className="welcome-channel-search"><Search size={16}/><input aria-label="Pesquisar canais" placeholder="Pesquisar canais por nome" value={channelSearch} onChange={event => setChannelSearch(event.target.value)}/></div><select className="settings-select" value={form.channelId || ''} onChange={event => update('channelId', event.target.value || null)} aria-label="Canal de boas-vindas"><option value="">Selecione um canal</option>{filteredChannels.map(channel => <option value={channel.id} key={channel.id}># {channel.name}</option>)}</select>{!channels.length && <p className="settings-muted">A API não retornou canais de texto visíveis para o bot.</p>}</div><div className="welcome-connection-card"><div className="welcome-status-dot"></div><div><strong>{botInstalled ? 'VyntexBot conectado' : 'VyntexBot não instalado'}</strong><small>{botInstalled ? 'Sessão autorizada e permissões verificadas pelo backend.' : 'Instale o bot neste servidor para configurar o Welcome.'}</small></div><Check size={17}/></div></div></section>
-    <section className="welcome-stage"><div className="welcome-stage-heading"><span className="welcome-stage-number">02</span><div><p>ETAPA 2</p><h3>Templates de mensagens</h3><small>Escolha uma base visual. A seleção não salva automaticamente.</small></div></div><div className="welcome-template-grid welcome-template-grid-v2">{WELCOME_TEMPLATES.map(template => <button type="button" key={template.id} className={`welcome-template-card ${template.values.useEmbed ? 'is-embed' : ''}`} onClick={() => applyTemplate(template)}><div className="welcome-template-mini"><span className="template-mini-mark">{template.values.useEmbed ? '▣' : '≡'}</span><b>{template.values.title || template.values.content || 'Começar do zero'}</b><small>{template.values.description || template.description}</small></div><strong>{template.name}</strong><small>{template.description}</small></button>)}</div></section>
-    <section className="welcome-stage"><div className="welcome-stage-heading"><span className="welcome-stage-number">03</span><div><p>ETAPA 3</p><h3>Personalização da mensagem</h3><small>Os campos permanecem ao alternar entre mensagem normal e embed.</small></div></div><div className="welcome-editor-layout"><div className="welcome-editor-column"><div className="welcome-format-toggle"><button type="button" className={!form.useEmbed ? 'active' : ''} onClick={() => update('useEmbed', false)}>Mensagem normal</button><button type="button" className={form.useEmbed ? 'active' : ''} onClick={() => update('useEmbed', true)}>Embed do Discord</button></div><label htmlFor="welcome-v2-content">Conteúdo da mensagem</label><textarea id="welcome-v2-content" className="settings-control settings-textarea" value={form.content || ''} maxLength={2000} onFocus={() => setActiveField('content')} onChange={event => update('content', event.target.value)} placeholder="Bem-vindo(a), {user}!"/>{form.useEmbed && <><label htmlFor="welcome-v2-title">Título da embed</label><input id="welcome-v2-title" className="settings-control" value={form.title || ''} maxLength={256} onFocus={() => setActiveField('title')} onChange={event => update('title', event.target.value)}/><label htmlFor="welcome-v2-description">Descrição</label><textarea id="welcome-v2-description" className="settings-control settings-textarea" value={form.description || ''} maxLength={4096} onFocus={() => setActiveField('description')} onChange={event => update('description', event.target.value)}/><div className="settings-inline-fields"><div><label htmlFor="welcome-v2-color">Cor</label><div className="welcome-color-field"><input type="color" value={/^#[0-9a-f]{6}$/i.test(form.color || '') ? form.color : '#5865F2'} onChange={event => update('color', event.target.value)}/><input id="welcome-v2-color" className="settings-control" value={form.color || ''} maxLength={7} onChange={event => update('color', event.target.value)}/></div></div><div><label htmlFor="welcome-v2-image">Imagem por URL</label><input id="welcome-v2-image" className="settings-control" value={form.imageUrl || ''} maxLength={2048} placeholder="https://..." onChange={event => update('imageUrl', event.target.value || null)}/></div></div><label htmlFor="welcome-v2-footer">Rodapé</label><input id="welcome-v2-footer" className="settings-control" value={form.footer || ''} maxLength={2048} onFocus={() => setActiveField('footer')} onChange={event => update('footer', event.target.value || null)}/><label className="welcome-checkbox"><input type="checkbox" checked={form.showMemberInfo !== false} onChange={event => update('showMemberInfo', event.target.checked)}/><span><b>Mostrar nome e avatar do membro</b><small>Usa o autor da embed no Discord.</small></span></label></>}<div className="welcome-variable-box"><div><strong>Variáveis dinâmicas</strong><small>Clique para inserir no campo selecionado.</small></div><div className="welcome-variable-list">{WELCOME_VARIABLES.map(([token, description]) => <button type="button" key={token} title={description} onClick={() => insertVariable(token)}><span>{token}</span><Copy size={14}/></button>)}</div></div></div><WelcomePreview form={form} guildName={guildName} profile={profile}/></div></section>
-    <section className="welcome-stage welcome-test-stage"><div className="welcome-stage-heading"><span className="welcome-stage-number">04</span><div><p>ETAPA 4</p><h3>Pré-visualização e teste</h3><small>A prévia é local. O teste envia uma mensagem real, sem salvar o rascunho.</small></div></div><div className="welcome-test-row"><div><Send size={18}/><span><strong>Testar mensagem atual</strong><small>{selectedChannel ? `Será enviada para #${selectedChannel.name}.` : 'Selecione um canal na Etapa 1.'}</small></span></div><button type="button" className="btn btn-outline" disabled={testing || !form.channelId} onClick={() => onTest(form)}><Send size={15}/>{testing ? 'Enviando...' : 'Testar mensagem'}</button></div></section>
-    <div className={`welcome-savebar ${dirty ? 'is-dirty' : 'is-saved'}`}><div className="welcome-save-status">{dirty ? <><span className="unsaved-dot"></span><div><strong>Você tem alterações que não foram salvas</strong><small>Salve para aplicar no servidor.</small></div></> : <><Check size={17}/><div><strong>Tudo salvo</strong><small>As configurações estão sincronizadas.</small></div></>}</div><div className="welcome-save-actions"><button type="button" className="btn btn-outline" disabled={!dirty || saving} onClick={reset}><RotateCcw size={15}/> Redefinir</button><button type="button" className="btn btn-primary" disabled={!dirty || saving} onClick={() => onSave(form)}>{saving ? <><RefreshCw size={15} className="spin"/> Salvando...</> : <><Check size={15}/> Salvar</>}</button></div></div>
-  </div>;
-}
-
+const WELCOME_DEFAULTS = { enabled: false, channelId: '', content: 'Bem-vindo(a), {user}!', useEmbed: true, showMemberInfo: true, title: 'Seja bem-vindo(a)!', description: 'Olá {user}, seja bem-vindo(a) ao servidor **{server}**! Agora somos {memberCount} membros.', color: '#5865F2', imageUrl: '', footer: '' };
+const LOGS_DEFAULTS = { enabled: false, channelId: '', memberEvents: true, messageEvents: true, roleEvents: true, moderationEvents: true, includeMessageContent: false };
 const sections = [
   { id: 'home', label: 'Início', path: '/' },
   { id: 'commands', label: 'Comandos', path: '/commands' },
   { id: 'store', label: 'Loja', path: '/store' },
   { id: 'dashboard', label: 'Dashboard', path: '/dashboard' },
 ];
+
+function ConnectedSettings({ currentSetting, CurrentSettingIcon, activeSetting, welcomeConfig, welcomeChannels, welcomeLoading, welcomeSaving, welcomeMessage, welcomeDirty, updateWelcome, saveWelcome, testWelcome, logsConfig, logsChannels, logsLoading, logsSaving, logsMessage, logsDirty, updateLogs, saveLogs }) {
+  if (activeSetting !== 'welcome' && activeSetting !== 'logs') return <div className="settings-main-panel"><div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">EM DESENVOLVIMENTO</span></div><div className="settings-preview-note"><Sparkles size={18}/><div><strong>Este sistema ainda não está implementado no bot.</strong><p>Os controles ficarão disponíveis quando houver processamento correspondente no VyntexBot. Nenhuma alteração é salva nesta categoria.</p></div></div><div className="settings-footer-note"><LockKeyhole size={14}/> Categoria somente informativa até a implementação do bot.</div></div>;
+  if (activeSetting === 'logs') return <div className="settings-main-panel"><div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">CONECTADO</span></div>{logsLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando configuração...</div> : <div className="settings-form-preview"><div className="settings-field"><label htmlFor="logs-channel">Canal de logs</label><select id="logs-channel" value={logsConfig.channelId} onChange={event => updateLogs('channelId', event.target.value)}><option value="">Selecione um canal</option>{logsChannels.map(channel => <option key={channel.id} value={channel.id}>#{channel.name}</option>)}</select></div><div className="settings-row"><span><strong>Ativar logs</strong><small>O bot registrará os eventos selecionados.</small></span><input className="real-toggle" type="checkbox" checked={logsConfig.enabled} onChange={event => updateLogs('enabled', event.target.checked)} /></div><div className="settings-row"><span><strong>Entrada e saída de membros</strong><small>Registra membros entrando e saindo.</small></span><input className="real-toggle" type="checkbox" checked={logsConfig.memberEvents} onChange={event => updateLogs('memberEvents', event.target.checked)} /></div><div className="settings-row"><span><strong>Mensagens editadas e excluídas</strong><small>Registra alterações e exclusões de mensagens.</small></span><input className="real-toggle" type="checkbox" checked={logsConfig.messageEvents} onChange={event => updateLogs('messageEvents', event.target.checked)} /></div><div className="settings-row"><span><strong>Alterações de cargos</strong><small>Registra cargos adicionados ou removidos.</small></span><input className="real-toggle" type="checkbox" checked={logsConfig.roleEvents} onChange={event => updateLogs('roleEvents', event.target.checked)} /></div><div className="settings-row"><span><strong>Ações de moderação</strong><small>Registra eventos recebidos do audit log, como bans.</small></span><input className="real-toggle" type="checkbox" checked={logsConfig.moderationEvents} onChange={event => updateLogs('moderationEvents', event.target.checked)} /></div><div className="settings-row"><span><strong>Incluir conteúdo das mensagens</strong><small>Desativado por padrão para reduzir exposição de conteúdo.</small></span><input className="real-toggle" type="checkbox" checked={logsConfig.includeMessageContent} onChange={event => updateLogs('includeMessageContent', event.target.checked)} /></div><div className="settings-actions"><button className="btn btn-primary" onClick={saveLogs} disabled={logsSaving || !logsDirty}>{logsSaving ? 'Salvando...' : 'Salvar alterações'}</button></div></div>}{logsMessage && <div className="settings-feedback">{logsMessage}</div>}<div className="settings-footer-note"><LockKeyhole size={14}/> As alterações são validadas pelo backend e persistidas por servidor.</div></div>;
+  return <div className="settings-main-panel"><div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">CONECTADO</span></div>{welcomeLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando configuração...</div> : <div className="settings-form-preview">
+    <div className="settings-field"><label htmlFor="welcome-channel">Canal de boas-vindas</label><select id="welcome-channel" value={welcomeConfig.channelId} onChange={event => updateWelcome('channelId', event.target.value)}><option value="">Não enviar (desativado)</option>{welcomeChannels.map(channel => <option key={channel.id} value={channel.id}>#{channel.name}</option>)}</select></div>
+    <div className="settings-field"><label htmlFor="welcome-content">Mensagem simples</label><textarea id="welcome-content" value={welcomeConfig.content} onChange={event => updateWelcome('content', event.target.value)} placeholder="Use {user}, {username}, {server} e {memberCount}." /></div>
+    <div className="settings-row"><span><strong>Ativar boas-vindas</strong><small>O bot enviará a mensagem quando um membro entrar.</small></span><input className="real-toggle" type="checkbox" checked={welcomeConfig.enabled} onChange={event => updateWelcome('enabled', event.target.checked)} /></div>
+    <div className="settings-row"><span><strong>Usar embed</strong><small>Exibe título, descrição, cor, imagem e rodapé.</small></span><input className="real-toggle" type="checkbox" checked={welcomeConfig.useEmbed} onChange={event => updateWelcome('useEmbed', event.target.checked)} /></div>
+    {welcomeConfig.useEmbed && <><div className="settings-field"><label htmlFor="welcome-title">Título</label><input id="welcome-title" value={welcomeConfig.title} onChange={event => updateWelcome('title', event.target.value)} /></div><div className="settings-field"><label htmlFor="welcome-description">Descrição</label><textarea id="welcome-description" value={welcomeConfig.description} onChange={event => updateWelcome('description', event.target.value)} /></div><div className="settings-fields-inline"><div className="settings-field"><label htmlFor="welcome-color">Cor</label><input id="welcome-color" type="text" value={welcomeConfig.color} onChange={event => updateWelcome('color', event.target.value)} /></div><div className="settings-field"><label htmlFor="welcome-image">Imagem/banner (URL)</label><input id="welcome-image" type="url" value={welcomeConfig.imageUrl} onChange={event => updateWelcome('imageUrl', event.target.value)} /></div></div><div className="settings-field"><label htmlFor="welcome-footer">Rodapé</label><input id="welcome-footer" value={welcomeConfig.footer} onChange={event => updateWelcome('footer', event.target.value)} /></div><div className="settings-row"><span><strong>Mostrar informações do membro</strong><small>Inclui o nome/avatar no embed.</small></span><input className="real-toggle" type="checkbox" checked={welcomeConfig.showMemberInfo} onChange={event => updateWelcome('showMemberInfo', event.target.checked)} /></div></>}
+    <div className="settings-actions"><button className="btn btn-primary" onClick={saveWelcome} disabled={welcomeSaving || !welcomeDirty}>{welcomeSaving ? 'Salvando...' : 'Salvar alterações'}</button><button className="btn btn-outline" onClick={testWelcome} disabled={welcomeSaving || !welcomeConfig.channelId}>Enviar teste</button></div>
+  </div>}{welcomeMessage && <div className="settings-feedback">{welcomeMessage}</div>}<div className="settings-footer-note"><LockKeyhole size={14}/> As alterações são validadas pelo backend e persistidas por servidor.</div></div>;
+}
 
 function App() {
   const [route, setRoute] = useState(window.location.pathname);
@@ -174,13 +51,18 @@ function App() {
   const [sessionToken, setSessionToken] = useState(0);
   const [selectedGuild, setSelectedGuild] = useState(null);
   const [activeSetting, setActiveSetting] = useState('welcome');
-  const [settingsData, setSettingsData] = useState({ welcome: null, booster: null, channels: [] });
-  const [settingsLoading, setSettingsLoading] = useState(false);
-  const [settingsSaving, setSettingsSaving] = useState(false);
-  const [settingsTesting, setSettingsTesting] = useState(false);
-  const [settingsRetry, setSettingsRetry] = useState(0);
-  const [settingsError, setSettingsError] = useState('');
-  const [settingsNotice, setSettingsNotice] = useState('');
+  const [welcomeConfig, setWelcomeConfig] = useState(WELCOME_DEFAULTS);
+  const [welcomeOriginal, setWelcomeOriginal] = useState(WELCOME_DEFAULTS);
+  const [welcomeChannels, setWelcomeChannels] = useState([]);
+  const [welcomeLoading, setWelcomeLoading] = useState(false);
+  const [welcomeSaving, setWelcomeSaving] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [logsConfig, setLogsConfig] = useState(LOGS_DEFAULTS);
+  const [logsOriginal, setLogsOriginal] = useState(LOGS_DEFAULTS);
+  const [logsChannels, setLogsChannels] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsSaving, setLogsSaving] = useState(false);
+  const [logsMessage, setLogsMessage] = useState('');
 
   function go(path) {
     window.history.pushState({}, '', path);
@@ -189,11 +71,8 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   window.onpopstate = () => setRoute(window.location.pathname);
-  const dashboardRouteActive = /^\/dashboard(?:\/[^/]+)?\/?$/.test(route) || route.replace(/\/+$/, '') === '/panel';
 
   useEffect(() => {
-    // No dashboard, a consulta combinada abaixo já carrega o perfil e os servidores.
-    if (/^\/dashboard(?:\/[^/]+)?\/?$/.test(window.location.pathname) || window.location.pathname === '/panel') return;
     let cancelled = false;
     fetch(`${AUTH_API}/api/me`, { credentials: 'include' })
       .then(async r => { if (!r.ok) throw new Error('Sem sessão'); return r.json(); })
@@ -211,44 +90,24 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!dashboardRouteActive) return;
+    if (!(/^\/dashboard(?:\/[^/]+)?\/?$/.test(route) || route.replace(/\/+$/, '') === '/panel')) return;
     let cancelled = false;
-    const cacheKey = 'vyntex-dashboard-cache-v1';
-    // Mostra os últimos dados desta sessão imediatamente enquanto atualiza a lista em segundo plano.
-    try {
-      const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
-      if (cached?.profile && Array.isArray(cached.guilds)) {
-        setProfile(cached.profile);
-        setGuilds(cached.guilds);
-        setDashboardLoading(false);
-      } else setDashboardLoading(true);
-    } catch { setDashboardLoading(true); }
-    // Perfil e servidores são pedidos em paralelo; sem duplicar a chamada de perfil no dashboard.
+    setDashboardLoading(true);
+    // As duas consultas usam a mesma sessão; executá-las em paralelo evita uma ida extra ao backend.
     Promise.all([
       fetch(`${AUTH_API}/api/me`, { credentials: 'include' }),
       fetch(`${AUTH_API}/api/guilds`, { credentials: 'include' }),
     ])
       .then(async ([meResponse, guildResponse]) => {
         const [me, guildData] = await Promise.all([meResponse.json(), guildResponse.json()]);
-        if (!meResponse.ok) throw Object.assign(new Error(me.error || 'Faça login com o Discord para continuar.'), { status: meResponse.status });
-        if (!guildResponse.ok) throw Object.assign(new Error(guildData.error || 'Não foi possível carregar os servidores.'), { status: guildResponse.status });
-        if (!cancelled) {
-          const nextGuilds = guildData.guilds || [];
-          setProfile(me); setGuilds(nextGuilds); setDashboardError('');
-          try { sessionStorage.setItem(cacheKey, JSON.stringify({ profile: me, guilds: nextGuilds, savedAt: Date.now() })); } catch { /* cache opcional */ }
-        }
+        if (!meResponse.ok) throw new Error(me.error || 'Faça login com o Discord para continuar.');
+        if (!guildResponse.ok) throw new Error(guildData.error || 'Não foi possível carregar os servidores.');
+        if (!cancelled) { setProfile(me); setGuilds(guildData.guilds || []); setDashboardError(''); }
       })
-      .catch(err => { if (!cancelled) {
-        if (err.status === 401 || /Faça login com o Discord|Sem sessão|sessão.*expirou|Unauthorized|401/i.test(err.message)) {
-          setProfile(null); setGuilds([]);
-          setSelectedGuild(null);
-          try { sessionStorage.removeItem(cacheKey); } catch { /* cache opcional */ }
-        }
-        if (!/Faça login com o Discord/i.test(err.message)) setDashboardError(err.message || 'Erro ao atualizar o painel.');
-      } })
+      .catch(err => { if (!cancelled) { setProfile(null); setGuilds([]); if (!/Faça login com o Discord/i.test(err.message)) setDashboardError(err.message || 'Erro ao carregar o painel.'); } })
       .finally(() => { if (!cancelled) setDashboardLoading(false); });
     return () => { cancelled = true; };
-  }, [dashboardRouteActive, sessionToken]);
+  }, [route, sessionToken]);
 
   useEffect(() => {
     const currentPage = route.replace(/\/+$/, '') || '/';
@@ -270,27 +129,80 @@ function App() {
   }, [route, guilds]);
 
   useEffect(() => {
-    if (!selectedGuild?.id) return;
+    if (!selectedGuild || activeSetting !== 'welcome') return undefined;
     let cancelled = false;
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 15000);
-    setSettingsLoading(true); setSettingsError(''); setSettingsNotice('');
-    const base = `${AUTH_API}/api/guilds/${selectedGuild.id}`;
+    setWelcomeLoading(true);
+    setWelcomeMessage('');
     Promise.all([
-      fetch(`${base}/welcome`, { credentials: 'include', signal: controller.signal }),
-      fetch(`${base}/booster`, { credentials: 'include', signal: controller.signal }),
-      fetch(`${base}/channels`, { credentials: 'include', signal: controller.signal }),
-    ]).then(async responses => {
-      const payloads = await Promise.all(responses.map(response => response.json()));
-      const failed = responses.findIndex(response => !response.ok);
-      if (failed >= 0) throw new Error(payloads[failed].error || 'Não foi possível carregar as configurações.');
-      if (!cancelled) setSettingsData({ welcome: payloads[0], booster: payloads[1], channels: payloads[2].channels || [] });
-    }).catch(error => { if (!cancelled) setSettingsError(error.message || 'Não foi possível carregar as configurações.'); })
-      .finally(() => { if (!cancelled) setSettingsLoading(false); });
-    return () => { cancelled = true; window.clearTimeout(timeout); controller.abort(); };
-  }, [selectedGuild?.id, settingsRetry]);
+      fetch(`${AUTH_API}/api/guilds/${selectedGuild.id}/welcome`, { credentials: 'include' }),
+      fetch(`${AUTH_API}/api/guilds/${selectedGuild.id}/channels`, { credentials: 'include' }),
+    ]).then(async ([configResponse, channelsResponse]) => {
+      const [config, channels] = await Promise.all([configResponse.json(), channelsResponse.json()]);
+      if (!configResponse.ok) throw new Error(config.error || 'Não foi possível carregar as boas-vindas.');
+      if (!channelsResponse.ok) throw new Error(channels.error || 'Não foi possível carregar os canais.');
+      if (!cancelled) {
+        const next = { ...WELCOME_DEFAULTS, ...config, channelId: config.channelId || '' };
+        setWelcomeConfig(next); setWelcomeOriginal(next); setWelcomeChannels(channels.channels || []);
+      }
+    }).catch(error => { if (!cancelled) setWelcomeMessage(error.message || 'Erro ao carregar a configuração.'); })
+      .finally(() => { if (!cancelled) setWelcomeLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedGuild, activeSetting]);
 
-  function loginDiscord(force = false) { window.location.href = `${AUTH_API}/auth/discord${force ? '?force=1' : ''}`; }
+  useEffect(() => {
+    if (!selectedGuild || activeSetting !== 'logs') return undefined;
+    let cancelled = false;
+    setLogsLoading(true); setLogsMessage('');
+    Promise.all([
+      fetch(`${AUTH_API}/api/guilds/${selectedGuild.id}/logs`, { credentials: 'include' }),
+      fetch(`${AUTH_API}/api/guilds/${selectedGuild.id}/channels`, { credentials: 'include' }),
+    ]).then(async ([configResponse, channelsResponse]) => {
+      const [config, channels] = await Promise.all([configResponse.json(), channelsResponse.json()]);
+      if (!configResponse.ok) throw new Error(config.error || 'Não foi possível carregar os logs.');
+      if (!channelsResponse.ok) throw new Error(channels.error || 'Não foi possível carregar os canais.');
+      if (!cancelled) { const next = { ...LOGS_DEFAULTS, ...config, channelId: config.channelId || '' }; setLogsConfig(next); setLogsOriginal(next); setLogsChannels(channels.channels || []); }
+    }).catch(error => { if (!cancelled) setLogsMessage(error.message || 'Erro ao carregar os logs.'); })
+      .finally(() => { if (!cancelled) setLogsLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedGuild, activeSetting]);
+
+  const welcomeDirty = JSON.stringify(welcomeConfig) !== JSON.stringify(welcomeOriginal);
+  function updateWelcome(field, value) { setWelcomeConfig(current => ({ ...current, [field]: value })); setWelcomeMessage(''); }
+  async function saveWelcome() {
+    setWelcomeSaving(true); setWelcomeMessage('');
+    try {
+      const response = await fetch(`${AUTH_API}/api/guilds/${selectedGuild.id}/welcome`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...welcomeConfig, channelId: welcomeConfig.channelId || null }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Não foi possível salvar as boas-vindas.');
+      const next = { ...WELCOME_DEFAULTS, ...data, channelId: data.channelId || '' };
+      setWelcomeConfig(next); setWelcomeOriginal(next); setWelcomeMessage('Configuração salva com sucesso.');
+    } catch (error) { setWelcomeMessage(error.message || 'Erro ao salvar a configuração.'); }
+    finally { setWelcomeSaving(false); }
+  }
+  async function testWelcome() {
+    setWelcomeSaving(true); setWelcomeMessage('');
+    try {
+      const response = await fetch(`${AUTH_API}/api/guilds/${selectedGuild.id}/welcome/test`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(welcomeConfig) });
+      const data = response.status === 204 ? {} : await response.json();
+      if (!response.ok) throw new Error(data.error || 'Não foi possível enviar o teste.');
+      setWelcomeMessage('Mensagem de teste enviada.');
+    } catch (error) { setWelcomeMessage(error.message || 'Erro ao enviar o teste.'); }
+    finally { setWelcomeSaving(false); }
+  }
+  const logsDirty = JSON.stringify(logsConfig) !== JSON.stringify(logsOriginal);
+  function updateLogs(field, value) { setLogsConfig(current => ({ ...current, [field]: value })); setLogsMessage(''); }
+  async function saveLogs() {
+    setLogsSaving(true); setLogsMessage('');
+    try {
+      const response = await fetch(`${AUTH_API}/api/guilds/${selectedGuild.id}/logs`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...logsConfig, channelId: logsConfig.channelId || null }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Não foi possível salvar os logs.');
+      const next = { ...LOGS_DEFAULTS, ...data, channelId: data.channelId || '' }; setLogsConfig(next); setLogsOriginal(next); setLogsMessage('Configuração de logs salva com sucesso.');
+    } catch (error) { setLogsMessage(error.message || 'Erro ao salvar os logs.'); }
+    finally { setLogsSaving(false); }
+  }
+
+  function loginDiscord() { window.location.href = `${AUTH_API}/auth/discord`; }
   function openDashboard() {
     setMobileOpen(false);
     loginDiscord();
@@ -298,36 +210,6 @@ function App() {
   async function logoutDiscord() {
     try { await fetch(`${AUTH_API}/auth/logout`, { method: 'POST', credentials: 'include' }); } catch { /* estado local será limpo mesmo se a rede falhar */ }
     setSessionToken(n => n + 1); setProfile(null); setGuilds([]); setDashboardError('');
-  }
-  function retrySettings() {
-    setSettingsRetry(value => value + 1);
-  }
-  async function saveSetting(type, values) {
-    if (!selectedGuild?.id) return;
-    setSettingsSaving(true); setSettingsError(''); setSettingsNotice('');
-    try {
-      const response = await fetch(`${AUTH_API}/api/guilds/${selectedGuild.id}/${type}`, {
-        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'Não foi possível salvar a configuração.');
-      setSettingsData(current => ({ ...current, [type]: payload }));
-      setSettingsNotice(`${type === 'welcome' ? 'Welcome' : 'Booster'} salvo com sucesso.`);
-    } catch (error) { setSettingsError(error.message || 'Não foi possível salvar a configuração.'); }
-    finally { setSettingsSaving(false); }
-  }
-  async function testWelcome(values) {
-    if (!selectedGuild?.id || !values.channelId) return;
-    const channel = settingsData.channels.find(item => item.id === values.channelId);
-    if (!window.confirm(`Enviar uma mensagem de teste para #${channel?.name || 'o canal selecionado'} em ${selectedGuild.name}?`)) return;
-    setSettingsTesting(true); setSettingsError(''); setSettingsNotice('');
-    try {
-      const response = await fetch(`${AUTH_API}/api/guilds/${selectedGuild.id}/welcome/test`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) });
-      const payload = response.status === 204 ? null : await response.json();
-      if (!response.ok) throw new Error(payload?.error || 'Não foi possível enviar o teste.');
-      setSettingsNotice(`Mensagem de teste enviada para #${channel?.name || 'o canal selecionado'}.`);
-    } catch (error) { setSettingsError(error.message || 'Não foi possível enviar o teste.'); }
-    finally { setSettingsTesting(false); }
   }
   function inviteBotToGuild(guildId) { window.location.href = `https://discord.com/oauth2/authorize?client_id=${botClientId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}&disable_guild_select=true`; }
 
@@ -338,7 +220,6 @@ function App() {
   const isTeam = page === '/team' || page === '/cargos';
   const settingSections = [
     { id: 'welcome', label: 'Boas-vindas', desc: 'Mensagem e canal de entrada', icon: BellRing, status: 'Preparando' },
-    { id: 'booster', label: 'Booster', desc: 'Agradecimento por Boost', icon: Crown, status: 'Preparando' },
     { id: 'logs', label: 'Logs', desc: 'Registros do servidor', icon: ClipboardList, status: 'Preparando' },
     { id: 'moderation', label: 'Moderação', desc: 'Regras e punições', icon: ShieldAlert, status: 'Preparando' },
     { id: 'tickets', label: 'Tickets', desc: 'Atendimento da comunidade', icon: MessageSquare, status: 'Preparando' },
@@ -410,9 +291,7 @@ function App() {
             {settingSections.map(item => { const Icon = item.icon; return <button key={item.id} className={`config-side-link ${activeSetting === item.id ? 'active' : ''}`} onClick={() => setActiveSetting(item.id)}><Icon size={17}/><span>{item.label}</span></button>; })}
             <div className="config-sidebar-bottom"><button onClick={() => { setSelectedGuild(null); go('/dashboard'); }}><ArrowLeft size={16}/> Todos os servidores</button><div className="config-sidebar-user">{discordAvatar(profile) ? <img src={discordAvatar(profile)} alt=""/> : <UserRound size={18}/>}<span>{profile.global_name || profile.username}</span><button onClick={logoutDiscord} title="Sair"><LogOut size={15}/></button></div></div>
           </aside>
-           <div className={`config-workspace ${(activeSetting === 'welcome' || activeSetting === 'booster') ? 'live-config-workspace' : ''}`}>
-           {activeSetting === 'welcome' && <div className="live-settings-panel live-settings-panel-v2"><div className="settings-live-heading"><strong>Configuração de Welcome</strong><span>Sincronizado com o VyntexBot</span></div><WelcomeSettingsEditorV2 config={settingsData.welcome} channels={settingsData.channels} loading={settingsLoading} saving={settingsSaving} testing={settingsTesting} error={settingsError} notice={settingsNotice} onSave={values => saveSetting(activeSetting, values)} onTest={testWelcome} onRetry={retrySettings} onLogin={() => loginDiscord(true)} guildName={selectedGuild?.name} profile={profile} botInstalled={selectedGuild?.botInstalled}/></div>}
-           {activeSetting === 'booster' && <div className="live-settings-panel"><div className="settings-live-heading"><strong>Configuração de Booster</strong><span>Sincronizado com o VyntexBot</span></div><SettingsEditor type="booster" config={settingsData.booster} channels={settingsData.channels} loading={settingsLoading} saving={settingsSaving} error={settingsError} notice={settingsNotice} onSave={values => saveSetting('booster', values)} /></div>}
+          <div className="config-workspace">
           <div className="settings-topline"><button className="btn btn-outline settings-back" onClick={() => { setSelectedGuild(null); go('/dashboard'); }}><ArrowLeft size={15}/> Voltar aos servidores</button><span className="settings-preview-label"><Clock3 size={13}/> Prévia da configuração</span></div>
           <div className="selected-server-banner">
             {guildIcon(selectedGuild) ? <img className="selected-server-icon" src={selectedGuild.icon} alt=""/> : <div className="selected-server-icon selected-server-fallback"><Server size={24}/></div>}
@@ -421,7 +300,8 @@ function App() {
           </div>
           <div className="settings-layout">
             <aside className="settings-sidebar"><div className="settings-sidebar-title"><SlidersHorizontal size={15}/> CATEGORIAS</div>{settingSections.map(item => { const Icon = item.icon; return <button key={item.id} className={`settings-nav-item ${activeSetting === item.id ? 'selected' : ''}`} onClick={() => setActiveSetting(item.id)}><Icon size={17}/><span>{item.label}<small>{item.desc}</small></span><ChevronRight size={14}/></button>; })}</aside>
-            {!(activeSetting === 'welcome' || activeSetting === 'booster') && <div className="settings-main-panel">
+             <ConnectedSettings currentSetting={currentSetting} CurrentSettingIcon={CurrentSettingIcon} activeSetting={activeSetting} welcomeConfig={welcomeConfig} welcomeChannels={welcomeChannels} welcomeLoading={welcomeLoading} welcomeSaving={welcomeSaving} welcomeMessage={welcomeMessage} welcomeDirty={welcomeDirty} updateWelcome={updateWelcome} saveWelcome={saveWelcome} testWelcome={testWelcome} logsConfig={logsConfig} logsChannels={logsChannels} logsLoading={logsLoading} logsSaving={logsSaving} logsMessage={logsMessage} logsDirty={logsDirty} updateLogs={updateLogs} saveLogs={saveLogs} />
+             <div className="settings-main-panel legacy-settings-content">
               <div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">EM BREVE</span></div>
               <div className="settings-preview-note"><Sparkles size={18}/><div><strong>Estamos preparando este sistema</strong><p>Esta é a estrutura visual inicial. Os controles serão conectados ao bot e ao banco de dados na próxima etapa.</p></div></div>
               {activeSetting === 'welcome' && <div className="settings-form-preview"><label>Canal de boas-vindas</label><div className="fake-select"><span><Hash size={15}/> selecione-um-canal</span><ChevronRight size={15}/></div><label>Mensagem de entrada</label><div className="fake-textarea">Olá, {`{usuário}`}! Seja bem-vindo(a) ao servidor {`{servidor}`}.</div><div className="settings-row"><span><strong>Enviar mensagem ao entrar</strong><small>Ativar o aviso de novos membros</small></span><span className="fake-toggle"/></div></div>}
@@ -433,12 +313,12 @@ function App() {
               {activeSetting === 'suggestions' && <div className="settings-form-preview"><label>Canal de sugestões</label><div className="fake-select"><span><Hash size={15}/> sugestoes</span><ChevronRight size={15}/></div><label>Texto do painel</label><div className="fake-textarea">Tem uma ideia para melhorar o servidor? Envie sua sugestão aqui!</div><div className="settings-row"><span><strong>Permitir votação</strong><small>Reações para apoiar ou reprovar ideias</small></span><span className="fake-toggle"/></div></div>}
               {activeSetting === 'instagram' && <div className="settings-form-preview"><label>Nome de usuário do Instagram</label><div className="fake-input">@seu_perfil</div><label>Canal para avisos</label><div className="fake-select"><span><Hash size={15}/> novidades</span><ChevronRight size={15}/></div><div className="settings-row"><span><strong>Avisar sobre novas publicações</strong><small>Enviar anúncio no canal escolhido</small></span><span className="fake-toggle"/></div></div>}
               <div className="settings-footer-note"><LockKeyhole size={14}/> As opções ainda não salvam alterações nesta versão.</div>
-            </div>}
+            </div>
           </div>
           </div>
         </section> : <><div className="guild-toolbar"><span><Server size={17}/> Servidores que você pode gerenciar <b>{guilds.length}</b></span><button className="btn btn-outline btn-refresh" onClick={() => { setSessionToken(n => n + 1); }}><RefreshCw size={14}/> Atualizar</button></div>
         {dashboardError && <div className="dashboard-alert"><ShieldCheck size={17}/>{dashboardError}</div>}
-        {dashboardLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando seus servidores...</div> : guilds.length ? <div className="guild-grid">{guilds.map(guild => <article className="guild-card" key={guild.id} style={{"--guild-index": guilds.indexOf(guild)}}>
+        {dashboardLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando seus servidores...</div> : guilds.length ? <div className="guild-grid">{guilds.map(guild => <article className="guild-card" key={guild.id}>
           <div className="guild-card-top">{guildIcon(guild) ? <img className="guild-icon" src={guild.icon} alt=""/> : <div className="guild-icon guild-icon-fallback"><Server size={24}/></div>}<div className="guild-title"><h3>{guild.name}</h3><small>{guild.owner ? 'Você é o dono' : 'Você pode gerenciar'}</small></div></div>
           <div className="guild-card-bottom">{guild.botInstalled ? <button className="btn btn-primary guild-action" onClick={() => { setSelectedGuild(guild); setActiveSetting('welcome'); go(`/dashboard/${guild.id}`); }}><Settings2 size={16}/> Configurar servidor</button> : <button className="btn btn-outline guild-action" onClick={() => inviteBotToGuild(guild.id)}><Bot size={16}/> Adicionar ao servidor <ExternalLink size={14}/></button>}</div>
           {guild.botInstalled && <span className="guild-installed"><Check size={13}/> Vyntex conectado</span>}
@@ -446,15 +326,15 @@ function App() {
         <p className="footnote">Só aparecem servidores nos quais sua conta tem permissão de gerenciamento.</p></> }
       </section>}
     </main> :
-    isCommands ? <main className="subpage commands-page page-motion">
+    isCommands ? <main className="subpage commands-page">
       <div className="eyebrow"><Command size={14}/> CENTRAL DE COMANDOS</div>
       <h1>Comandos do <span>Vyntex</span></h1>
       <p className="sublead">Tudo para organizar seu servidor e facilitar o trabalho da sua equipe.</p>
       <div className="searchbar"><Command size={18}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar comando ou recurso..."/><kbd>⌕</kbd></div>
-      <div className="command-grid">{visibleCommands.map(c=><article className="command-card" key={c.name} style={{"--card-index": visibleCommands.indexOf(c)}}><div><code>{c.name}</code><span className="command-group">{c.group}</span></div><p>{c.desc}</p></article>)}</div>
+      <div className="command-grid">{visibleCommands.map(c=><article className="command-card" key={c.name}><div><code>{c.name}</code><span className="command-group">{c.group}</span></div><p>{c.desc}</p></article>)}</div>
       <p className="footnote">Lista inicial de exemplo — os comandos finais dependem da implementação do bot.</p>
     </main> :
-    isStore ? <main className="subpage store-page page-motion">
+    isStore ? <main className="subpage store-page">
       <div className="eyebrow"><Sparkles size={14}/> PLANOS VYNTEX</div>
       <h1>Escolha seu <span>plano.</span></h1>
       <p className="sublead">Comece gratuitamente e evolua quando seu servidor precisar de mais.</p>
@@ -472,7 +352,7 @@ function App() {
       <p className="footnote">Os perfis da equipe poderão ser adicionados aqui depois.</p>
     </main> :
     <main>
-      <section className="hero home-motion">
+      <section className="hero">
         <div className="hero-glow"></div><div className="hero-grid"></div>
         <div className="hero-copy">
           <div className="status-pill"><span className="pulse"></span> SEU SERVIDOR, EM OUTRO NÍVEL</div>
@@ -508,16 +388,7 @@ function App() {
 
       <section className="cta-band"><div className="cta-symbol"><img src="/vyntex.png" alt=""/></div><div><div className="eyebrow">PRONTO PARA COMEÇAR?</div><h2>Leve o Vyntex para seu servidor.</h2><p>Adicione o bot e prepare sua comunidade para o próximo nível.</p></div><a className="btn btn-light" href={botInvite}>Adicionar ao Discord <ArrowUpRight size={16}/></a></section>
 
-      <section className="faq section-wrap"><div className="eyebrow"><Sparkles size={14}/> GUIA RÁPIDO</div><h2>Comece com o <span>Vyntex.</span></h2><p className="faq-intro">Tire suas dúvidas e deixe seu servidor pronto para receber a comunidade.</p>{[
-        ['O que é o Vyntex?','O Vyntex é um bot para Discord pensado para facilitar a rotina da sua comunidade. A proposta reúne atendimento por tickets, ferramentas de moderação, registros e recursos de organização em um só lugar. Os recursos marcados como em preparação serão liberados conforme cada sistema for implementado.'],
-        ['Como adiciono o bot ao meu servidor?','Clique em “Adicionar ao Discord”, escolha a comunidade na tela oficial do Discord e confira as permissões solicitadas. Você precisa ser dono do servidor ou ter permissão para gerenciá-lo. Depois, confirme a autorização e volte ao site da Vyntex.'],
-        ['Como abro o painel de controle?','Clique em “Abrir painel” ou em “Dashboard” no menu. Você será encaminhado ao Discord para autorizar o acesso à sua conta. Após a autorização, o painel mostra os servidores que sua conta pode gerenciar.'],
-        ['Por que meu servidor não aparece na lista?','Confira se entrou na conta Discord correta e se você é o proprietário do servidor ou tem permissão para gerenciá-lo. Use o botão “Atualizar” no painel. Se o Vyntex ainda não estiver instalado, o cartão oferecerá a opção de adicioná-lo.'],
-        ['Como configuro um servidor?','No Dashboard, localize o servidor em que o Vyntex já está instalado e clique em “Configurar servidor”. Você entrará na área específica daquele servidor. Nesta versão, as telas de configuração ainda são uma prévia e não salvam alterações.'],
-        ['Preciso autorizar o Discord toda vez?','Enquanto sua sessão de login continuar válida, o site tenta reconhecer sua conexão automaticamente. Se a sessão expirar, você sair da conta ou limpar os dados do navegador, será necessário autorizar novamente pelo Discord.'],
-        ['O Vyntex é gratuito?','O plano Free está apresentado como opção inicial. Recursos e condições de planos pagos ainda serão definidos antes de qualquer lançamento do Premium.'],
-        ['Onde consigo ajuda se algo não funcionar?','Tente atualizar a página, confira se o Vyntex está instalado e verifique se sua conta tem as permissões necessárias. Se o problema continuar, envie à equipe uma captura de tela do erro sem compartilhar senhas, códigos de autorização ou tokens.']
-      ].map(([q,a],i)=><div className={`faq-item ${faqOpen===i?'open':''}`} key={q}><button onClick={()=>setFaqOpen(faqOpen===i?-1:i)}><span>{q}</span><span>{faqOpen===i?'−':'+'}</span></button>{faqOpen===i&&<p>{a}</p>}</div>)}</section>
+      <section className="faq section-wrap"><div className="eyebrow">DÚVIDAS FREQUENTES</div><h2>Quer saber mais?</h2>{[['O que é o Vyntex?','Um bot para ajudar com tickets, moderação e organização de servidores Discord.'],['Como adiciono o bot?','Use o botão “Adicionar ao Discord”. O link definitivo será configurado com o ID oficial do bot.'],['Como abro o painel?','Clique em “Abrir o painel” e autorize a conexão com o Discord para acessar seu perfil e seus servidores.']].map(([q,a],i)=><div className={`faq-item ${faqOpen===i?'open':''}`} key={q}><button onClick={()=>setFaqOpen(faqOpen===i?-1:i)}><span>{q}</span><span>{faqOpen===i?'−':'+'}</span></button>{faqOpen===i&&<p>{a}</p>}</div>)}</section>
     </main>}
 
     <footer className="footer"><button className="brand footer-brand" onClick={()=>go('/')}><img src="/vyntex.png" alt=""/><span>Vyntex</span></button><span>© 2026 Vyntex. Feito para comunidades Discord.</span><div><button onClick={()=>go('/commands')}>Comandos</button><button onClick={()=>go('/store')}>Loja</button><button onClick={openDashboard}>Painel</button></div></footer>
