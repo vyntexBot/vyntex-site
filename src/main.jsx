@@ -21,7 +21,7 @@ const WELCOME_DEFAULTS = { enabled: false, channelId: '', content: 'Bem-vindo(a)
 const LOGS_DEFAULTS = { enabled: false, channelId: '', memberEvents: true, messageEvents: true, roleEvents: true, moderationEvents: true, includeMessageContent: false };
 
 function SettingSwitch({ checked, onChange, label }) {
-  return <button type="button" role="switch" aria-checked={checked} aria-label={label} className={`vyntex-switch ${checked ? 'is-on' : ''}`} onClick={() => onChange(!checked)}><span className="vyntex-switch-track"><span className="vyntex-switch-thumb" /></span><span className="vyntex-switch-state">{checked ? 'ON' : 'OFF'}</span></button>;
+  return <button type="button" role="switch" aria-checked={checked} aria-label={label} className={`vyntex-switch ${checked ? 'is-on' : ''}`} onClick={() => onChange(!checked)}><span className="switch-slider round" aria-hidden="true"><span className="switch-slider-thumb" /></span><span className="vyntex-switch-state">{checked ? 'Ativado' : 'Desativado'}</span></button>;
 }
 const sections = [
   { id: 'home', label: 'Início', path: '/' },
@@ -30,16 +30,16 @@ const sections = [
   { id: 'dashboard', label: 'Dashboard', path: '/dashboard' },
 ];
 
-function ConnectedSettings({ currentSetting, CurrentSettingIcon, activeSetting, welcomeConfig, welcomeChannels, welcomeLoading, welcomeSaving, welcomeMessage, welcomeDirty, updateWelcome, saveWelcome, testWelcome, logsConfig, logsChannels, logsLoading, logsSaving, logsMessage, logsDirty, updateLogs, saveLogs }) {
+function ConnectedSettings({ currentSetting, CurrentSettingIcon, activeSetting, welcomeConfig, welcomeChannels, welcomeLoading, welcomeSaving, welcomeMessage, updateWelcome, testWelcome, logsConfig, logsChannels, logsLoading, logsMessage, updateLogs }) {
   if (activeSetting !== 'welcome' && activeSetting !== 'logs') return <div className="settings-main-panel"><div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">EM DESENVOLVIMENTO</span></div><div className="settings-preview-note"><Sparkles size={18}/><div><strong>Este sistema ainda não está implementado no bot.</strong><p>Os controles ficarão disponíveis quando houver processamento correspondente no VyntexBot. Nenhuma alteração é salva nesta categoria.</p></div></div><div className="settings-footer-note"><LockKeyhole size={14}/> Categoria somente informativa até a implementação do bot.</div></div>;
-  if (activeSetting === 'logs') return <div className="settings-main-panel"><div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">CONECTADO</span></div>{logsLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando configuração...</div> : <div className="settings-form-preview"><div className="settings-field"><label htmlFor="logs-channel">Canal de logs</label><select id="logs-channel" value={logsConfig.channelId} onChange={event => updateLogs('channelId', event.target.value)}><option value="">Selecione um canal</option>{logsChannels.map(channel => <option key={channel.id} value={channel.id}>#{channel.name}</option>)}</select></div><div className="settings-row"><span><strong>Ativar logs</strong><small>O bot registrará os eventos selecionados.</small></span><SettingSwitch checked={logsConfig.enabled} onChange={value => updateLogs('enabled', value)} label="Ativar logs" /></div><div className="settings-row"><span><strong>Entrada e saída de membros</strong><small>Registra membros entrando e saindo.</small></span><SettingSwitch checked={logsConfig.memberEvents} onChange={value => updateLogs('memberEvents', value)} label="Registrar entrada e saída de membros" /></div><div className="settings-row"><span><strong>Mensagens editadas e excluídas</strong><small>Registra alterações e exclusões de mensagens.</small></span><SettingSwitch checked={logsConfig.messageEvents} onChange={value => updateLogs('messageEvents', value)} label="Registrar mensagens editadas e excluídas" /></div><div className="settings-row"><span><strong>Alterações de cargos</strong><small>Registra cargos adicionados ou removidos.</small></span><SettingSwitch checked={logsConfig.roleEvents} onChange={value => updateLogs('roleEvents', value)} label="Registrar alterações de cargos" /></div><div className="settings-row"><span><strong>Ações de moderação</strong><small>Registra eventos recebidos do audit log, como bans.</small></span><SettingSwitch checked={logsConfig.moderationEvents} onChange={value => updateLogs('moderationEvents', value)} label="Registrar ações de moderação" /></div><div className="settings-row"><span><strong>Incluir conteúdo das mensagens</strong><small>Desativado por padrão para reduzir exposição de conteúdo.</small></span><SettingSwitch checked={logsConfig.includeMessageContent} onChange={value => updateLogs('includeMessageContent', value)} label="Incluir conteúdo das mensagens" /></div><div className="settings-actions"><button className="btn btn-primary" onClick={saveLogs} disabled={logsSaving || !logsDirty}>{logsSaving ? 'Salvando...' : 'Salvar alterações'}</button></div></div>}{logsMessage && <div className="settings-feedback">{logsMessage}</div>}<div className="settings-footer-note"><LockKeyhole size={14}/> As alterações são validadas pelo backend e persistidas por servidor.</div></div>;
+  if (activeSetting === 'logs') return <div className="settings-main-panel"><div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">CONECTADO</span></div>{logsLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando configuração...</div> : <div className="settings-form-preview"><div className="settings-field"><label htmlFor="logs-channel">Canal de logs</label><select id="logs-channel" value={logsConfig.channelId} onChange={event => updateLogs('channelId', event.target.value)}><option value="">Selecione um canal</option>{logsChannels.map(channel => <option key={channel.id} value={channel.id}>#{channel.name}</option>)}</select></div><div className="settings-row"><span><strong>Ativar logs</strong><small>O bot registrará os eventos selecionados.</small></span><SettingSwitch checked={logsConfig.enabled} onChange={value => updateLogs('enabled', value)} label="Ativar logs" /></div><div className="settings-row"><span><strong>Entrada e saída de membros</strong><small>Registra membros entrando e saindo.</small></span><SettingSwitch checked={logsConfig.memberEvents} onChange={value => updateLogs('memberEvents', value)} label="Registrar entrada e saída de membros" /></div><div className="settings-row"><span><strong>Mensagens editadas e excluídas</strong><small>Registra alterações e exclusões de mensagens.</small></span><SettingSwitch checked={logsConfig.messageEvents} onChange={value => updateLogs('messageEvents', value)} label="Registrar mensagens editadas e excluídas" /></div><div className="settings-row"><span><strong>Alterações de cargos</strong><small>Registra cargos adicionados ou removidos.</small></span><SettingSwitch checked={logsConfig.roleEvents} onChange={value => updateLogs('roleEvents', value)} label="Registrar alterações de cargos" /></div><div className="settings-row"><span><strong>Ações de moderação</strong><small>Registra eventos recebidos do audit log, como bans.</small></span><SettingSwitch checked={logsConfig.moderationEvents} onChange={value => updateLogs('moderationEvents', value)} label="Registrar ações de moderação" /></div><div className="settings-row"><span><strong>Incluir conteúdo das mensagens</strong><small>Desativado por padrão para reduzir exposição de conteúdo.</small></span><SettingSwitch checked={logsConfig.includeMessageContent} onChange={value => updateLogs('includeMessageContent', value)} label="Incluir conteúdo das mensagens" /></div></div>}{logsMessage && <div className="settings-feedback">{logsMessage}</div>}<div className="settings-footer-note"><LockKeyhole size={14}/> As alterações são validadas pelo backend e persistidas por servidor.</div></div>;
   return <div className="settings-main-panel"><div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">CONECTADO</span></div>{welcomeLoading ? <div className="guild-empty"><RefreshCw className="spin"/> Carregando configuração...</div> : <div className="settings-form-preview">
     <div className="settings-field"><label htmlFor="welcome-channel">Canal de boas-vindas</label><select id="welcome-channel" value={welcomeConfig.channelId} onChange={event => updateWelcome('channelId', event.target.value)}><option value="">Não enviar (desativado)</option>{welcomeChannels.map(channel => <option key={channel.id} value={channel.id}>#{channel.name}</option>)}</select></div>
     <div className="settings-field"><label htmlFor="welcome-content">Mensagem simples</label><textarea id="welcome-content" value={welcomeConfig.content} onChange={event => updateWelcome('content', event.target.value)} placeholder="Use {user}, {username}, {server} e {memberCount}." /></div>
     <div className="settings-row"><span><strong>Ativar boas-vindas</strong><small>O bot enviará a mensagem quando um membro entrar.</small></span><SettingSwitch checked={welcomeConfig.enabled} onChange={value => updateWelcome('enabled', value)} label="Ativar boas-vindas" /></div>
     <div className="settings-row"><span><strong>Usar embed</strong><small>Exibe título, descrição, cor, imagem e rodapé.</small></span><SettingSwitch checked={welcomeConfig.useEmbed} onChange={value => updateWelcome('useEmbed', value)} label="Usar embed nas boas-vindas" /></div>
     {welcomeConfig.useEmbed && <><div className="settings-field"><label htmlFor="welcome-title">Título</label><input id="welcome-title" value={welcomeConfig.title} onChange={event => updateWelcome('title', event.target.value)} /></div><div className="settings-field"><label htmlFor="welcome-description">Descrição</label><textarea id="welcome-description" value={welcomeConfig.description} onChange={event => updateWelcome('description', event.target.value)} /></div><div className="settings-fields-inline"><div className="settings-field"><label htmlFor="welcome-color">Cor</label><input id="welcome-color" type="text" value={welcomeConfig.color} onChange={event => updateWelcome('color', event.target.value)} /></div><div className="settings-field"><label htmlFor="welcome-image">Imagem/banner (URL)</label><input id="welcome-image" type="url" value={welcomeConfig.imageUrl} onChange={event => updateWelcome('imageUrl', event.target.value)} /></div></div><div className="settings-field"><label htmlFor="welcome-footer">Rodapé</label><input id="welcome-footer" value={welcomeConfig.footer} onChange={event => updateWelcome('footer', event.target.value)} /></div><div className="settings-row"><span><strong>Mostrar informações do membro</strong><small>Inclui o nome/avatar no embed.</small></span><SettingSwitch checked={welcomeConfig.showMemberInfo} onChange={value => updateWelcome('showMemberInfo', value)} label="Mostrar informações do membro" /></div></>}
-    <div className="settings-actions"><button className="btn btn-primary" onClick={saveWelcome} disabled={welcomeSaving || !welcomeDirty}>{welcomeSaving ? 'Salvando...' : 'Salvar alterações'}</button><button className="btn btn-outline" onClick={testWelcome} disabled={welcomeSaving || !welcomeConfig.channelId}>Enviar teste</button></div>
+    <div className="settings-actions"><button className="btn btn-outline" onClick={testWelcome} disabled={welcomeSaving || !welcomeConfig.channelId}>Enviar teste</button></div>
   </div>}{welcomeMessage && <div className="settings-feedback">{welcomeMessage}</div>}<div className="settings-footer-note"><LockKeyhole size={14}/> As alterações são validadas pelo backend e persistidas por servidor.</div></div>;
 }
 
@@ -75,7 +75,17 @@ function App() {
     setMobileOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  window.onpopstate = () => setRoute(window.location.pathname);
+  useEffect(() => {
+    const onPopState = () => {
+      if (hasUnsavedChanges && serverConfigMode && !window.confirm('Você possui alterações não salvas. Deseja sair sem salvar?')) {
+        window.history.pushState({}, '', route);
+        return;
+      }
+      setRoute(window.location.pathname);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [hasUnsavedChanges, route, serverConfigMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,7 +191,8 @@ function App() {
       if (!response.ok) throw new Error(data.error || 'Não foi possível salvar as boas-vindas.');
       const next = { ...WELCOME_DEFAULTS, ...data, channelId: data.channelId || '' };
       setWelcomeConfig(next); setWelcomeOriginal(next); setWelcomeMessage('Configuração salva com sucesso.');
-    } catch (error) { setWelcomeMessage(error.message || 'Erro ao salvar a configuração.'); }
+      return true;
+    } catch (error) { setWelcomeMessage(error.message || 'Erro ao salvar a configuração.'); return false; }
     finally { setWelcomeSaving(false); }
   }
   async function testWelcome() {
@@ -203,8 +214,10 @@ function App() {
     return () => window.removeEventListener('beforeunload', warnBeforeLeave);
   }, [hasUnsavedChanges]);
   async function savePendingChanges() {
-    if (welcomeDirty) await saveWelcome();
-    if (logsDirty) await saveLogs();
+    const results = [];
+    if (welcomeDirty) results.push(await saveWelcome());
+    if (logsDirty) results.push(await saveLogs());
+    return results.every(Boolean);
   }
   function cancelPendingChanges() {
     setWelcomeConfig(welcomeOriginal);
@@ -220,11 +233,12 @@ function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Não foi possível salvar os logs.');
       const next = { ...LOGS_DEFAULTS, ...data, channelId: data.channelId || '' }; setLogsConfig(next); setLogsOriginal(next); setLogsMessage('Configuração de logs salva com sucesso.');
-    } catch (error) { setLogsMessage(error.message || 'Erro ao salvar os logs.'); }
+      return true;
+    } catch (error) { setLogsMessage(error.message || 'Erro ao salvar os logs.'); return false; }
     finally { setLogsSaving(false); }
   }
 
-  function loginDiscord() { window.location.href = `${AUTH_API}/auth/discord`; }
+  function loginDiscord() { window.location.href = `${AUTH_API}/auth/discord?origin=${encodeURIComponent(window.location.origin)}`; }
   function openDashboard() {
     setMobileOpen(false);
     loginDiscord();
@@ -322,7 +336,7 @@ function App() {
           </div>
           <div className="settings-layout">
             <aside className="settings-sidebar"><div className="settings-sidebar-title"><SlidersHorizontal size={15}/> CATEGORIAS</div>{settingSections.map(item => { const Icon = item.icon; return <button key={item.id} className={`settings-nav-item ${activeSetting === item.id ? 'selected' : ''}`} onClick={() => setActiveSetting(item.id)}><Icon size={17}/><span>{item.label}<small>{item.desc}</small></span><ChevronRight size={14}/></button>; })}</aside>
-             <ConnectedSettings currentSetting={currentSetting} CurrentSettingIcon={CurrentSettingIcon} activeSetting={activeSetting} welcomeConfig={welcomeConfig} welcomeChannels={welcomeChannels} welcomeLoading={welcomeLoading} welcomeSaving={welcomeSaving} welcomeMessage={welcomeMessage} welcomeDirty={welcomeDirty} updateWelcome={updateWelcome} saveWelcome={saveWelcome} testWelcome={testWelcome} logsConfig={logsConfig} logsChannels={logsChannels} logsLoading={logsLoading} logsSaving={logsSaving} logsMessage={logsMessage} logsDirty={logsDirty} updateLogs={updateLogs} saveLogs={saveLogs} />
+             <ConnectedSettings currentSetting={currentSetting} CurrentSettingIcon={CurrentSettingIcon} activeSetting={activeSetting} welcomeConfig={welcomeConfig} welcomeChannels={welcomeChannels} welcomeLoading={welcomeLoading} welcomeSaving={welcomeSaving} welcomeMessage={welcomeMessage} updateWelcome={updateWelcome} testWelcome={testWelcome} logsConfig={logsConfig} logsChannels={logsChannels} logsLoading={logsLoading} logsMessage={logsMessage} updateLogs={updateLogs} />
              <div className="settings-main-panel legacy-settings-content">
               <div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">EM BREVE</span></div>
               <div className="settings-preview-note"><Sparkles size={18}/><div><strong>Estamos preparando este sistema</strong><p>Esta é a estrutura visual inicial. Os controles serão conectados ao bot e ao banco de dados na próxima etapa.</p></div></div>
@@ -413,7 +427,7 @@ function App() {
       <section className="faq section-wrap"><div className="eyebrow">DÚVIDAS FREQUENTES</div><h2>Quer saber mais?</h2>{[['O que é o Vyntex?','Um bot para ajudar com tickets, moderação e organização de servidores Discord.'],['Como adiciono o bot?','Use o botão “Adicionar ao Discord”. O link definitivo será configurado com o ID oficial do bot.'],['Como abro o painel?','Clique em “Abrir o painel” e autorize a conexão com o Discord para acessar seu perfil e seus servidores.']].map(([q,a],i)=><div className={`faq-item ${faqOpen===i?'open':''}`} key={q}><button onClick={()=>setFaqOpen(faqOpen===i?-1:i)}><span>{q}</span><span>{faqOpen===i?'−':'+'}</span></button>{faqOpen===i&&<p>{a}</p>}</div>)}</section>
     </main>}
 
-    {serverConfigMode && hasUnsavedChanges && <div className="unsaved-changes-bar" role="status" aria-live="polite"><div className="unsaved-changes-copy"><span className="unsaved-changes-dot"/><div><strong>Você possui alterações não salvas!</strong><small>Salve ou cancele antes de sair desta configuração.</small></div></div><div className="unsaved-changes-actions"><button className="btn btn-outline" onClick={cancelPendingChanges} disabled={welcomeSaving || logsSaving}>Cancelar alterações</button><button className="btn btn-primary" onClick={savePendingChanges} disabled={welcomeSaving || logsSaving}>{welcomeSaving || logsSaving ? 'Salvando...' : 'Salvar alterações'}</button></div></div>}
+    {serverConfigMode && hasUnsavedChanges && <div className="unsaved-changes-bar" role="status" aria-live="polite"><div className="unsaved-changes-copy"><span className="unsaved-changes-dot"/><div><strong>Cuidado! Você tem alterações que não foram salvas</strong><small>Revise as configurações e escolha entre redefinir ou salvar.</small></div></div><div className="unsaved-changes-actions"><button className="btn btn-outline" onClick={cancelPendingChanges} disabled={welcomeSaving || logsSaving}>Redefinir</button><button className="btn btn-primary pending-save" onClick={savePendingChanges} disabled={welcomeSaving || logsSaving}>{welcomeSaving || logsSaving ? 'Salvando…' : 'Salvar'}</button></div></div>}
     <footer className="footer"><button className="brand footer-brand" onClick={()=>go('/')}><img src="/vyntex.png" alt=""/><span>Vyntex</span></button><span>© 2026 Vyntex. Feito para comunidades Discord.</span><div><button onClick={()=>go('/commands')}>Comandos</button><button onClick={()=>go('/store')}>Loja</button><button onClick={openDashboard}>Painel</button></div></footer>
   </div>;
 }
