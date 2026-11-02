@@ -339,6 +339,22 @@ button:focus-visible,a:focus-visible{outline:2px solid #80a8ff;outline-offset:4p
 .dashboard-config-shell .settings-field input,.dashboard-config-shell .settings-field select,.dashboard-config-shell .settings-field textarea{background:#202125;border-color:#484a51;color:#f0f1f3}
 .dashboard-config-shell .settings-field input:focus,.dashboard-config-shell .settings-field select:focus,.dashboard-config-shell .settings-field textarea:focus{border-color:#4dbdde;box-shadow:0 0 0 3px rgba(77,189,222,.15)}
 .dashboard-config-shell .settings-feedback{background:#1d382b;border-color:#397653;color:#b7efce}
+.vyntex-switch .switch-slider{position:relative;display:block;width:52px;height:30px;flex:0 0 52px;border:1px solid #5b5e66;border-radius:999px;background:linear-gradient(145deg,#51535a,#393b41);box-shadow:inset 0 2px 5px rgba(0,0,0,.34),0 1px 1px rgba(255,255,255,.05);transition:background .26s ease,border-color .26s ease,box-shadow .26s ease}
+.vyntex-switch .switch-slider-thumb{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:linear-gradient(145deg,#f5f6f7,#b9bcc3);box-shadow:0 3px 7px rgba(0,0,0,.34);transition:transform .26s cubic-bezier(.2,.8,.2,1),background .26s ease,box-shadow .26s ease}
+.vyntex-switch:hover .switch-slider{border-color:#7b8596}
+.vyntex-switch:active .switch-slider-thumb{transform:scale(.9)}
+.vyntex-switch.is-on .switch-slider{border-color:#43bddd;background:linear-gradient(115deg,#256cf5,#00bfd9);box-shadow:inset 0 1px 3px rgba(1,26,56,.36),0 0 0 3px rgba(0,195,222,.08),0 0 15px rgba(31,156,231,.26)}
+.vyntex-switch.is-on .switch-slider-thumb{transform:translateX(22px);background:linear-gradient(145deg,#fff,#dffaff);box-shadow:0 3px 8px rgba(0,25,68,.32),0 0 8px rgba(217,252,255,.6)}
+
+/* Neutraliza recortes y contextos que impedem o card fixo de acompanhar a viewport. */
+.dashboard-config-shell{overflow:visible;isolation:auto}
+.dashboard-config-shell .dashboard-page,.dashboard-config-shell .dashboard-content,.dashboard-config-shell .server-settings-view,.dashboard-config-shell .config-workspace{transform:none;filter:none;perspective:none}
+.dashboard-config-shell .unsaved-changes-bar{position:fixed!important;z-index:9999!important;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);margin:0;max-height:calc(100vh - 32px);overflow:auto;animation:pending-card-in .24s cubic-bezier(.2,.8,.2,1) both}
+.dashboard-config-shell:has(.unsaved-changes-bar) .config-workspace{padding-bottom:190px}
+
+/* Navegação persistente com rolagem independente do conteúdo no desktop. */
+@media(min-width:801px){.dashboard-config-shell{height:100vh;overflow:hidden}.dashboard-config-shell .dashboard-page,.dashboard-config-shell .dashboard-content,.dashboard-config-shell .server-settings-view{height:100vh;min-height:0}.dashboard-config-shell .config-app-sidebar{position:sticky;top:0;height:100vh;align-self:start;z-index:30}.dashboard-config-shell .config-workspace{height:100vh;overflow-y:auto;overscroll-behavior:contain;padding-bottom:150px}}
+@media(max-width:800px){.dashboard-config-shell{height:auto;min-height:100vh;overflow:visible}.dashboard-config-shell .dashboard-page,.dashboard-config-shell .dashboard-content,.dashboard-config-shell .server-settings-view,.dashboard-config-shell .config-workspace{height:auto;min-height:0;overflow:visible}.dashboard-config-shell .config-app-sidebar{position:sticky;top:0;z-index:40;max-height:none;overflow-x:auto;overflow-y:hidden;white-space:nowrap}.dashboard-config-shell .config-side-link{display:inline-flex;width:auto;vertical-align:middle}.dashboard-config-shell .config-side-link span{white-space:normal}.dashboard-config-shell .config-workspace{padding-bottom:165px}.dashboard-config-shell:has(.unsaved-changes-bar) .config-workspace{padding-bottom:220px}.dashboard-config-shell .unsaved-changes-bar{width:calc(100% - 24px);padding:13px;align-items:stretch;flex-direction:column;gap:12px}.dashboard-config-shell .unsaved-changes-actions{display:grid;grid-template-columns:1fr 1fr}.dashboard-config-shell .unsaved-changes-actions .btn{width:100%;min-width:0;padding:10px 8px}}
 
 /* Switch próprio, acessível por botão, toque e teclado. */
 .vyntex-switch{display:inline-flex;align-items:center;gap:10px;min-height:38px;padding:4px 0 4px 4px;border:0;border-radius:999px;background:transparent;color:#afb2ba;cursor:pointer;touch-action:manipulation;transition:transform .18s ease,color .2s ease}
