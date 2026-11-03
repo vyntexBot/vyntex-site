@@ -87,7 +87,7 @@ function App() {
     const removeCard = window.setTimeout(() => {
       setShowUnsavedCard(false);
       setUnsavedCardLeaving(false);
-    }, 240);
+    }, 280);
     return () => window.clearTimeout(removeCard);
   }, [hasUnsavedChanges, serverConfigMode, showUnsavedCard]);
 
