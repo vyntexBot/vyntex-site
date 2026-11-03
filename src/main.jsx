@@ -67,6 +67,12 @@ function App() {
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsSaving, setLogsSaving] = useState(false);
   const [logsMessage, setLogsMessage] = useState('');
+  const welcomeDirty = JSON.stringify(welcomeConfig) !== JSON.stringify(welcomeOriginal);
+  const logsDirty = JSON.stringify(logsConfig) !== JSON.stringify(logsOriginal);
+  const hasUnsavedChanges = welcomeDirty || logsDirty;
+  const page = route.replace(/\/+$/, '') || '/';
+  const isPanel = page === '/dashboard' || page === '/panel' || /^\/dashboard\/[^/]+$/.test(page);
+  const serverConfigMode = isPanel && Boolean(selectedGuild) && /^\/dashboard\/[^/]+$/.test(page);
 
   function go(path) {
     if (hasUnsavedChanges && serverConfigMode && path !== route && !window.confirm('Você possui alterações não salvas. Deseja sair sem salvar?')) return;
@@ -181,7 +187,6 @@ function App() {
     return () => { cancelled = true; };
   }, [selectedGuild, activeSetting]);
 
-  const welcomeDirty = JSON.stringify(welcomeConfig) !== JSON.stringify(welcomeOriginal);
   function updateWelcome(field, value) { setWelcomeConfig(current => ({ ...current, [field]: value })); setWelcomeMessage(''); }
   async function saveWelcome() {
     setWelcomeSaving(true); setWelcomeMessage('');
@@ -205,8 +210,6 @@ function App() {
     } catch (error) { setWelcomeMessage(error.message || 'Erro ao enviar o teste.'); }
     finally { setWelcomeSaving(false); }
   }
-  const logsDirty = JSON.stringify(logsConfig) !== JSON.stringify(logsOriginal);
-  const hasUnsavedChanges = welcomeDirty || logsDirty;
   useEffect(() => {
     if (!hasUnsavedChanges) return undefined;
     const warnBeforeLeave = event => { event.preventDefault(); event.returnValue = ''; };
@@ -249,8 +252,6 @@ function App() {
   }
   function inviteBotToGuild(guildId) { window.location.href = `https://discord.com/oauth2/authorize?client_id=${botClientId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}&disable_guild_select=true`; }
 
-  const page = route.replace(/\/+$/, '') || '/';
-  const isPanel = page === '/dashboard' || page === '/panel' || /^\/dashboard\/[^/]+$/.test(page);
   const isCommands = page === '/commands';
   const isStore = page === '/store' || page === '/loja';
   const isTeam = page === '/team' || page === '/cargos';
@@ -274,8 +275,6 @@ function App() {
   ];
   const allCommands = commandGroups.flatMap(g => g.commands.map(c => ({ ...{ name:c[0], desc:c[1], group:g.title } })));
   const visibleCommands = allCommands.filter(c => `${c.name} ${c.desc} ${c.group}`.toLowerCase().includes(search.toLowerCase()));
-
-  const serverConfigMode = isPanel && Boolean(selectedGuild) && /^\/dashboard\/[^/]+$/.test(page);
 
   return <div className={`app-shell ${serverConfigMode ? 'dashboard-config-shell' : ''}`}>
     <header className="navbar">
