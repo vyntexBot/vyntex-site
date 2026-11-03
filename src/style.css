@@ -377,3 +377,31 @@ button:focus-visible,a:focus-visible{outline:2px solid #80a8ff;outline-offset:4p
 /* Desktop: a navegação permanece fixa; a rolagem pertence somente ao conteúdo. */
 @media(min-width:801px){.dashboard-config-shell{height:100vh;overflow:hidden}.dashboard-config-shell .dashboard-page,.dashboard-config-shell .dashboard-content,.dashboard-config-shell .server-settings-view{height:100vh;min-height:0}.dashboard-config-shell .config-workspace{height:100vh;overflow-y:auto;overscroll-behavior:contain;padding-bottom:150px}.dashboard-config-shell .config-app-sidebar{height:100vh}}
 @media(max-width:800px){.dashboard-config-shell{height:auto;overflow:visible}.dashboard-config-shell .config-workspace{height:auto;overflow:visible;padding-bottom:165px}.dashboard-config-shell .config-app-sidebar{position:relative;display:block;white-space:nowrap;overflow-x:auto;overflow-y:hidden}.dashboard-config-shell .config-brand,.dashboard-config-shell .config-guild-switch,.dashboard-config-shell .config-menu-label,.dashboard-config-shell .config-sidebar-bottom{white-space:normal}.dashboard-config-shell .config-side-link{display:inline-flex;width:auto;margin:0 5px 8px 0;padding:9px 11px}.dashboard-config-shell .config-side-link span{font-size:10px}.dashboard-config-shell .config-side-link.active{box-shadow:inset 0 -2px #38bde8}.dashboard-config-shell .config-sidebar-bottom{display:none}.unsaved-changes-bar{bottom:12px;width:calc(100% - 24px);padding:14px;align-items:stretch;flex-direction:column;gap:13px}.unsaved-changes-actions{display:grid;grid-template-columns:1fr 1fr}.unsaved-changes-actions .btn{width:100%;min-width:0}.vyntex-switch-state{display:none}}
+
+/* Refinamentos finais: animações compostas só com opacity e transform. */
+.vyntex-switch{transition:transform 180ms var(--ease-out),color 180ms ease}
+.vyntex-switch:hover .switch-slider{border-color:#87a8c4;box-shadow:inset 0 2px 5px rgba(0,0,0,.34),0 0 0 4px rgba(67,189,221,.08)}
+.vyntex-switch:active .switch-slider-thumb{transform:scale(.9)}
+.vyntex-switch.is-on:active .switch-slider-thumb{transform:translateX(22px) scale(.9)}
+.switch-slider.round{will-change:background,border-color,box-shadow}
+.switch-slider-thumb{will-change:transform;transition:transform 280ms cubic-bezier(.22,1,.36,1),background 220ms ease,box-shadow 220ms ease}
+.vyntex-switch.is-on .switch-slider{box-shadow:inset 0 1px 3px rgba(1,26,56,.36),0 0 0 4px rgba(0,195,222,.10),0 0 20px rgba(31,156,231,.36)}
+
+.settings-main-panel{will-change:transform,opacity}
+.settings-main-panel .settings-form-preview,.settings-main-panel .settings-preview-note,.settings-main-panel .settings-footer-note{animation:vyntex-content-reveal 360ms var(--ease-out) both}
+.settings-main-panel .settings-preview-note{animation-delay:35ms}.settings-main-panel .settings-footer-note{animation-delay:70ms}
+.settings-row{transition:background-color var(--motion-fast) ease,transform var(--motion-fast) var(--ease-out),border-color var(--motion-fast) ease}
+.settings-row:hover{background:rgba(114,152,218,.045);transform:translateX(2px)}
+.guild-card{transition:transform var(--motion-medium) var(--ease-out),border-color var(--motion-medium) ease,box-shadow var(--motion-medium) ease}
+.guild-card:hover{transform:translateY(-4px);border-color:#496b9a;box-shadow:0 18px 38px rgba(0,0,0,.24),0 0 22px rgba(40,105,255,.08)}
+.guild-empty,.settings-feedback{animation:vyntex-enter 320ms var(--ease-out) both}
+
+.dashboard-config-shell .unsaved-changes-bar{pointer-events:auto;animation:pending-card-in 280ms var(--ease-out) both}
+.dashboard-config-shell .unsaved-changes-bar.is-leaving{pointer-events:none;animation:pending-card-out 240ms ease-in both}
+.unsaved-changes-actions .btn{transition:transform 180ms var(--ease-out),background 180ms ease,border-color 180ms ease,box-shadow 220ms ease}
+.unsaved-changes-actions .btn:active{transform:translateY(1px) scale(.97)}
+.unsaved-changes-actions .pending-save:hover{box-shadow:0 11px 28px rgba(22,146,76,.42),0 0 0 3px rgba(84,225,143,.12)}
+.unsaved-changes-actions .pending-save:focus-visible{outline-color:#82f5ae}
+@keyframes pending-card-out{from{opacity:1;transform:translate(-50%,0) scale(1)}to{opacity:0;transform:translate(-50%,18px) scale(.98)}}
+@keyframes vyntex-content-reveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.dashboard-config-shell .unsaved-changes-bar.is-leaving{animation-duration:.01ms}.settings-main-panel .settings-form-preview,.settings-main-panel .settings-preview-note,.settings-main-panel .settings-footer-note{animation:none}}

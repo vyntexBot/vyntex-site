@@ -67,12 +67,29 @@ function App() {
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsSaving, setLogsSaving] = useState(false);
   const [logsMessage, setLogsMessage] = useState('');
+  const [showUnsavedCard, setShowUnsavedCard] = useState(false);
+  const [unsavedCardLeaving, setUnsavedCardLeaving] = useState(false);
   const welcomeDirty = JSON.stringify(welcomeConfig) !== JSON.stringify(welcomeOriginal);
   const logsDirty = JSON.stringify(logsConfig) !== JSON.stringify(logsOriginal);
   const hasUnsavedChanges = welcomeDirty || logsDirty;
   const page = route.replace(/\/+$/, '') || '/';
   const isPanel = page === '/dashboard' || page === '/panel' || /^\/dashboard\/[^/]+$/.test(page);
   const serverConfigMode = isPanel && Boolean(selectedGuild) && /^\/dashboard\/[^/]+$/.test(page);
+
+  useEffect(() => {
+    if (serverConfigMode && hasUnsavedChanges) {
+      setShowUnsavedCard(true);
+      setUnsavedCardLeaving(false);
+      return undefined;
+    }
+    if (!showUnsavedCard) return undefined;
+    setUnsavedCardLeaving(true);
+    const removeCard = window.setTimeout(() => {
+      setShowUnsavedCard(false);
+      setUnsavedCardLeaving(false);
+    }, 240);
+    return () => window.clearTimeout(removeCard);
+  }, [hasUnsavedChanges, serverConfigMode, showUnsavedCard]);
 
   function go(path) {
     if (hasUnsavedChanges && serverConfigMode && path !== route && !window.confirm('Você possui alterações não salvas. Deseja sair sem salvar?')) return;
@@ -335,7 +352,7 @@ function App() {
           </div>
           <div className="settings-layout">
             <aside className="settings-sidebar"><div className="settings-sidebar-title"><SlidersHorizontal size={15}/> CATEGORIAS</div>{settingSections.map(item => { const Icon = item.icon; return <button key={item.id} className={`settings-nav-item ${activeSetting === item.id ? 'selected' : ''}`} onClick={() => setActiveSetting(item.id)}><Icon size={17}/><span>{item.label}<small>{item.desc}</small></span><ChevronRight size={14}/></button>; })}</aside>
-             <ConnectedSettings currentSetting={currentSetting} CurrentSettingIcon={CurrentSettingIcon} activeSetting={activeSetting} welcomeConfig={welcomeConfig} welcomeChannels={welcomeChannels} welcomeLoading={welcomeLoading} welcomeSaving={welcomeSaving} welcomeMessage={welcomeMessage} updateWelcome={updateWelcome} testWelcome={testWelcome} logsConfig={logsConfig} logsChannels={logsChannels} logsLoading={logsLoading} logsMessage={logsMessage} updateLogs={updateLogs} />
+             <ConnectedSettings key={activeSetting} currentSetting={currentSetting} CurrentSettingIcon={CurrentSettingIcon} activeSetting={activeSetting} welcomeConfig={welcomeConfig} welcomeChannels={welcomeChannels} welcomeLoading={welcomeLoading} welcomeSaving={welcomeSaving} welcomeMessage={welcomeMessage} updateWelcome={updateWelcome} testWelcome={testWelcome} logsConfig={logsConfig} logsChannels={logsChannels} logsLoading={logsLoading} logsMessage={logsMessage} updateLogs={updateLogs} />
              <div className="settings-main-panel legacy-settings-content">
               <div className="settings-panel-heading"><div className="settings-feature-icon"><CurrentSettingIcon size={22}/></div><div><div className="eyebrow">CONFIGURAÇÃO</div><h3>{currentSetting.label}</h3><p>{currentSetting.desc}</p></div><span className="coming-badge">EM BREVE</span></div>
               <div className="settings-preview-note"><Sparkles size={18}/><div><strong>Estamos preparando este sistema</strong><p>Esta é a estrutura visual inicial. Os controles serão conectados ao bot e ao banco de dados na próxima etapa.</p></div></div>
@@ -426,7 +443,7 @@ function App() {
       <section className="faq section-wrap"><div className="eyebrow">DÚVIDAS FREQUENTES</div><h2>Quer saber mais?</h2>{[['O que é o Vyntex?','Um bot para ajudar com tickets, moderação e organização de servidores Discord.'],['Como adiciono o bot?','Use o botão “Adicionar ao Discord”. O link definitivo será configurado com o ID oficial do bot.'],['Como abro o painel?','Clique em “Abrir o painel” e autorize a conexão com o Discord para acessar seu perfil e seus servidores.']].map(([q,a],i)=><div className={`faq-item ${faqOpen===i?'open':''}`} key={q}><button onClick={()=>setFaqOpen(faqOpen===i?-1:i)}><span>{q}</span><span>{faqOpen===i?'−':'+'}</span></button>{faqOpen===i&&<p>{a}</p>}</div>)}</section>
     </main>}
 
-    {serverConfigMode && hasUnsavedChanges && <div className="unsaved-changes-bar" role="status" aria-live="polite"><div className="unsaved-changes-copy"><span className="unsaved-changes-dot"/><div><strong>Cuidado! Você tem alterações que não foram salvas</strong><small>Revise as configurações e escolha entre redefinir ou salvar.</small></div></div><div className="unsaved-changes-actions"><button className="btn btn-outline" onClick={cancelPendingChanges} disabled={welcomeSaving || logsSaving}>Redefinir</button><button className="btn btn-primary pending-save" onClick={savePendingChanges} disabled={welcomeSaving || logsSaving}>{welcomeSaving || logsSaving ? 'Salvando…' : 'Salvar'}</button></div></div>}
+    {showUnsavedCard && <div className={`unsaved-changes-bar ${unsavedCardLeaving ? 'is-leaving' : ''}`} role="status" aria-live="polite" aria-hidden={unsavedCardLeaving}><div className="unsaved-changes-copy"><span className="unsaved-changes-dot"/><div><strong>Cuidado! Você tem alterações que não foram salvas</strong><small>Revise as configurações e escolha entre redefinir ou salvar.</small></div></div><div className="unsaved-changes-actions"><button className="btn btn-outline" onClick={cancelPendingChanges} disabled={welcomeSaving || logsSaving || unsavedCardLeaving}>Redefinir</button><button className="btn btn-primary pending-save" onClick={savePendingChanges} disabled={welcomeSaving || logsSaving || unsavedCardLeaving}>{welcomeSaving || logsSaving ? 'Salvando…' : 'Salvar'}</button></div></div>}
     <footer className="footer"><button className="brand footer-brand" onClick={()=>go('/')}><img src="/vyntex.png" alt=""/><span>Vyntex</span></button><span>© 2026 Vyntex. Feito para comunidades Discord.</span><div><button onClick={()=>go('/commands')}>Comandos</button><button onClick={()=>go('/store')}>Loja</button><button onClick={openDashboard}>Painel</button></div></footer>
   </div>;
 }
